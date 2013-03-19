@@ -1,4 +1,4 @@
-Zenphoto-Lightroom-Publisher
+Zenphoto Lightroom Publisher
 ============================
 Developed by Joseph Philbert based on Nick Jacobson (lokkju) changes originally developed by Lars Hagen (desgphoto)
 
