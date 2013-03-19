@@ -1,6 +1,6 @@
 --[[----------------------------------------------------------------------------
 
-ZenphotoPublishServiceProvider.lua
+ZenphotoPublishSupport.lua
 Publish-specific portions of Lightroom Zenphoto uploader
 
 ------------------------------------------------------------------------------]]
