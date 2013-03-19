@@ -4,7 +4,7 @@ ZenphotoDialogSections.lua
 dialog customization for Lightroom Zenphoto uploader
 
 ------------------------------------------------------------------------------]]
-PluginVersion = '2.1'
+PluginVersion = '3.0.1'
 
 	-- Lightroom SDK
 local LrApplication     = import 'LrApplication'
@@ -16,11 +16,7 @@ local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local bind 				= LrView.bind
 
     -- Logger
-local myLogger = LrLogger( 'Zenphoto' )
-myLogger:enable( "logfile" )
-local debug, info, warn, err = myLogger:quick( 'debug', 'info', 'warn', 'err' )
-
-
+local log = LrLogger( 'ZenphotoLog' )
 --require 'DP_API'
 require 'ZenphotoUser'
 
@@ -28,23 +24,86 @@ require 'ZenphotoUser'
 
 ZenphotoDialogSections = {}
 
+function updateLogLevelStatus( propertyTable )
+	--log:trace ("Calling updateLogLevelStatus( propertyTable )")
+	if propertyTable.logLevel == 'none' then
+		log:disable( )
+		propertyTable.logSynopsis = "No Log File"
+	elseif propertyTable.logLevel == 'errors' then
+		log:enable( { ['error'] = 'logfile' ; ['fatal'] = 'logfile'} )
+		propertyTable.logSynopsis = "Log File - Errors Only"
+	elseif propertyTable.logLevel == 'trace' then
+		log:enable( { ['error'] = 'logfile' ; ['debug'] = 'logfile' ; ['fatal'] = 'logfile' ; ['warn'] = 'logfile' ; ['info'] = 'logfile' } )
+		propertyTable.logSynopsis = "Log File - Trace"
+		elseif propertyTable.logLevel == 'verbose' then
+		log:enable( 'logfile' )
+		propertyTable.logSynopsis = "Log File - Verbose"
+	end
+end
+
 
 function ZenphotoDialogSections.startDialog( propertyTable )
-	info('ZenphotoDialogSections.startDialog')
+	--info('ZenphotoDialogSections.startDialog')
+log:info('-------------------------------------')
+log:info('START LOG TIMESTAMP')
+log:info('-------------------------------------')
+	
+if prefs.logLevel ~= not 'none' then
+	--log:trace("Calling ZenphotoDialogSections.startDialog( propertyTable )")
+	end
+	--info('ZenphotoDialogSections.startDialog')
+	
+	
+	-- initialize the log level
+	if propertyTable.logLevel == nil then
+		if prefs.logLevel ~= nil and prefs.logLevel ~= "" then
+			propertyTable.logLevel = prefs.logLevel
+		else
+			propertyTable.logLevel = 'none'
+		end
+	end
+	
+-- add observer
+	propertyTable:addObserver( 'logLevel', updateLogLevelStatus )
 
+	-- initialize dialog elements
+	updateLogLevelStatus( propertyTable )
 	-- Make sure we're logged in.
 	ZenphotoUser.initLogin( propertyTable )
 end
 
-function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
+-------------------------------------------------------------------------------
 
+function ZenphotoDialogSections.endDialog( propertyTable )
+	if prefs.logLevel ~= not 'none' then
+	--log:trace("Calling ZenphotoDialogSections.endDialog( propertyTable )")
+	end
+	-- save the log level into the preferences
+	prefs.logLevel = propertyTable.logLevel
+
+end
+
+function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
+	if prefs.logLevel ~= not 'none' then
+	log:trace("Calling ZenphotoDialogSections.sectionsForTopOfDialog")
+end
+	-- Initializations
+
+
+	if propertyTable.logLevel == nil then
+		propertyTable.logLevel = 'none'
+	end
+	if propertyTable.logSynopsis == nil then
+		propertyTable.logSynopsis = ''
+	end
+	
 	local activeCatalog = LrApplication.activeCatalog()
     local info = require 'Info.lua'
     local versionString = '(' .. (info.VERSION.major or '0') .. '.' .. (info.VERSION.minor or '0')  .. '.' .. (info.VERSION.revision or '0') .. ')'
 	return {
 
 		{
-			title = "ZenPhoto Publisher for Lightroom 3",
+			title = "ZenPhoto Publisher for Lightroom 3 and 4",
 			f:row {
 				f:column {
 					f:picture {
@@ -62,7 +121,7 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 						text_color = import 'LrColor'( 0, 0, 1 ),
 						mouse_down = function(self) 
 							local LrHttp = import 'LrHttp' 
-							LrHttp.openUrlInBrowser('http://code.google.com/p/zenphoto-publisher/') 
+							LrHttp.openUrlInBrowser('https://github.com/philbertphotos/zenphoto-publisher/') 
 						end,
 						[ WIN_ENV and 'adjustCursor' or 'adjust_cursor' ] = function(self)
 							self.text_color = import 'LrColor'( 1, 0, 0 )
@@ -95,7 +154,7 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 			f:static_text {
 				fill_horizontal = 1,
 				font = "<system/small/bold>",
-				title = 'Welcome to ZenPhoto Publisher for Lightroom 3 ' .. versionString,
+				title = 'Welcome to ZenPhoto Publisher for Lightroom 3 and 4 ' .. versionString,
 			},
 			f:column {
 			spacing = 0,
@@ -107,11 +166,11 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 					title = 'Currently Maintained By:'
 				},
 				f:static_text { 
-					title = 'Loki (Nick Jacobsen) of Lokkju', 
+					title = 'Joseph Philbert', 
 					text_color = import 'LrColor'( 0, 0, 1 ),
 					mouse_down = function(self) 
 						local LrHttp = import 'LrHttp' 
-						LrHttp.openUrlInBrowser('http://www.lokkju.com/') 
+						LrHttp.openUrlInBrowser('https://github.com/philbertphotos/zenphoto-publisher') 
 					end,
 					[ WIN_ENV and 'adjustCursor' or 'adjust_cursor' ] = function(self)
 						self.text_color = import 'LrColor'( 1, 0, 0 )
@@ -158,8 +217,27 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 					width = 300,
 					title = 'Please use the Issue Tracker link above for any problems you run into.',
 				},
-		},
+			
+			f:static_text {	
+			fill_horizontal = 1,
+					width = 100,
+		title = "Debug Settings",
+		tooltip =  bind { key = 'logLevel', object = propertyTable },	
+	},	
+	f:group_box {
+	f:popup_menu {
+					fill_horizontal = 1,
+					items = {
+						{ title = "No Log File", value = 'none' },
+						{ title = "Log File - Errors Only", value = 'errors' },
+						{ title = "Tracing", value = 'trace' },
+						{ title = "Log File - Debug", value = 'verbose' },
+					},
+					value = bind { key = 'logLevel', object = propertyTable }
+				}
+}				
+},
+	
 	}
+
 end	
-
-
