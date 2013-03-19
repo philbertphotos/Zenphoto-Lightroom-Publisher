@@ -15,10 +15,9 @@ local LrXml 			= import 'LrXml'
 local LrStringUtils		= import 'LrStringUtils'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
 
-
-local logger = import 'LrLogger'( 'ZenphotoAPI' )
-logger:enable('logfile')
-local debug, info, warn, err = logger:quick( 'debug', 'info', 'warn', 'err' )
+    -- Logger
+local LrLogger = import 'LrLogger'
+local log = LrLogger( 'ZenphotoLog' )
 
 --============================================================================--
 
@@ -46,7 +45,7 @@ end
 
 function ZenphotoAPI.authorize( login, password ) 
 
-	info('Authorizing with Zenphoto... Username: ' .. tostring(login) .. ' width password ' .. tostring(password))
+	log:info('Authorizing with Zenphoto... Username: ' .. tostring(login) .. ' width password ' .. tostring(password))
 
 	local auth = false
 	local showMsg = true
@@ -56,6 +55,9 @@ function ZenphotoAPI.authorize( login, password )
 
 
 	-- Parse response
+	if prefs.logLevel == 'verbose' then
+	log:debug("xmlResponse: "..tostring(xmlResponse))
+	end
 	if not xmlResponse or string.find(xmlResponse, 'html') then
 		LrDialogs.message( 'Server could not be connected!', 'Please make sure that an internet connection is established and that the web service is running.', 'error' )
 		fault = true
@@ -74,7 +76,7 @@ function ZenphotoAPI.authorize( login, password )
 		auth = false
 		showMsg = true
 	else
---		info('Authorization successful')
+		log:info('Authorization successful')
 		auth = true
 		showMsg = false	
 	end	
@@ -87,7 +89,7 @@ end
 
 
 function ZenphotoAPI.uploadPhoto( filePath, params )
-	info('Uploading POST photo: ' .. filePath)
+	log:info('Uploading POST photo: ' .. filePath)
 
 	local err = ZenphotoAPI.uploadFile( filePath )
 	
@@ -113,7 +115,7 @@ end
 
 
 function ZenphotoAPI.uploadXMLPhoto( filename, params, file )
-	info('Uploading XML photo: ' .. filename)
+	log:info('Uploading XML photo: ' .. filename)
 
 	local paramMap = initRequestParams()
 	table.insert( paramMap, { paramName = 'filename',		paramType = 'string', paramValue = filename } )
@@ -132,7 +134,7 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.deletePhoto(propertyTable, params)
-	info('Delete photo from server')
+	log:info('Delete photo from server')
 	
 	ZenphotoAPI.initPublishServiceID(propertyTable)
 	
@@ -141,19 +143,19 @@ function ZenphotoAPI.deletePhoto(propertyTable, params)
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
-	info(paramMap)
+	log:info(paramMap)
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.delete', paramMap, true )
-
-	info(xmlResponse)
-	
+	log:info(xmlResponse)
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
 
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.getAlbums( propertyTable, simple )	
-	info('Get list of all albums')
-
+	log:info('Get list of all albums')
+if prefs.token ~= 'OK' then
+log:info('Check if user is logged in ZenphotoAPI.getAlbums')
+	
 --	if propertyTable then
 --		ZenphotoAPI.initPublishServiceID(propertyTable)
 --	end
@@ -164,7 +166,7 @@ function ZenphotoAPI.getAlbums( propertyTable, simple )
 	end
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.getList', paramMap, true )
 	
---	info(xmlResponse)
+--	log:info(xmlResponse)
 
 	if simple == true then
 		local result = ZenphotoAPI.getTableFromXML(xmlResponse, true)
@@ -174,11 +176,11 @@ function ZenphotoAPI.getAlbums( propertyTable, simple )
 		return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
 	end
 end
-
+end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.getAlbumImages(id)	
-	info('Get images from album ' .. tostring(id))
+	log:info('Get images from album ' .. tostring(id))
 
 	local paramMap = initRequestParams()
 	table.insert( paramMap, { paramName = 'id',	paramType = 'string', paramValue = id } )
@@ -192,7 +194,7 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.deleteAlbum( propertyTable, albumId )
-	info('Delete album from server with imageId: ' .. albumId)
+	log:info('Delete album from server with imageId: ' .. albumId)
 	
 --	ZenphotoAPI.initPublishServiceID(propertyTable)
 
@@ -208,7 +210,7 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.createAlbum( propertyTable, params )
-	info('Create a new album: ' .. params.name)
+	log:info('Create a new album: ' .. params.name)
 
 --	ZenphotoAPI.initPublishServiceID(propertyTable)
 
@@ -226,7 +228,7 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.editAlbum( propertyTable, params )
-	info('Edit album: ')
+	log:info('Edit album: ')
 
 --	ZenphotoAPI.initPublishServiceID(propertyTable)
 
@@ -258,20 +260,6 @@ function ZenphotoAPI.initPublishServiceID( propertyTable )
 	return publishServiceID
 	
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function ZenphotoAPI.getTableFromXML(xmlResponse, formatForUI, allowSingleEntry)
 
 	if formatForUI == nil then formatForUI = false end
@@ -412,7 +400,7 @@ function ZenphotoAPI.getSingleValueXML(xmlResponse)
 
 	-- show when image was not found
 	if responseDocument:name() == "fault" then
-		debug(ZenphotoAPI.getXMLError(xmlResponse))
+		log:debug("getSingleValueXML", ZenphotoAPI.getXMLError(xmlResponse))
 	end
 
 	local responseDocument = LrXml.parseXml(xmlResponse)
@@ -540,7 +528,7 @@ function ZenphotoAPI.uploadFile( filePath )
 	local zenphotoHost = prefs.host
 	local zenphotoURL = 'http://'..zenphotoHost..'/'..prefs.webpath..'/xmlrpc_upload.php'
 
-	info( 'Uploading photo', zenphotoURL )
+	log:info( 'Uploading photo', zenphotoURL )
 
 	local filename = LrPathUtils.leafName( filePath )	
 
