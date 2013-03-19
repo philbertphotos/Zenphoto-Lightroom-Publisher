@@ -121,7 +121,7 @@ end
 						text_color = import 'LrColor'( 0, 0, 1 ),
 						mouse_down = function(self) 
 							local LrHttp = import 'LrHttp' 
-							LrHttp.openUrlInBrowser('https://github.com/philbertphotos/zenphoto-publisher/') 
+							LrHttp.openUrlInBrowser('http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher/') 
 						end,
 						[ WIN_ENV and 'adjustCursor' or 'adjust_cursor' ] = function(self)
 							self.text_color = import 'LrColor'( 1, 0, 0 )
@@ -139,7 +139,7 @@ end
 						text_color = import 'LrColor'( 0, 0, 1 ),
 						mouse_down = function(self) 
 							local LrHttp = import 'LrHttp' 
-							LrHttp.openUrlInBrowser('http://code.google.com/p/zenphoto-publisher/issues/list') 
+							LrHttp.openUrlInBrowser('https://github.com/philbertphotos/Zenphoto-Lightroom-Publisher/issues?state=open') 
 						end,
 						[ WIN_ENV and 'adjustCursor' or 'adjust_cursor' ] = function(self)
 							self.text_color = import 'LrColor'( 1, 0, 0 )
