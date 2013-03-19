@@ -26,29 +26,29 @@ Please see the Lightroom 3 documentation for details on how it works.
 **Installation**
 
 The installation is very simple. The download comes as a ZIP-file which contains two directories:
-    ZenphotoPublisher.lrplugin? – is the Lightroom plug-in which must be installed from the Lightroom Plugin Manager
-    zp-lightroom - the web service which makes the interaction between Lightroom an Zenphoto possible. Please copy this directory as it is into the "PLUGIN" path of your Zenphoto installation. All communication between Lightroom and Zenphoto is done via XML-calls?:
+ZenphotoPublisher.lrplugin? – is the Lightroom plug-in which must be installed from the Lightroom Plugin Manager
+zp-lightroom - the web service which makes the interaction between Lightroom an Zenphoto possible. Please copy this directory as it is into the "PLUGIN" path of your Zenphoto installation. All communication between Lightroom and Zenphoto is done via XML-calls?:
 
-        IXR_Library.inc.php? – 3rd party PHP class to handle XML client/server communication (this class is also used e.g. by WordPress)
-        xmlprc.php – contains functions to access the Zenphoto-API, e.g. to read data and make any changes. The service will not write to the database via SQL. Any changes are made via Zenphoto-API calls. So it should be save in any way! Nevertheless, there are some SQL-statements used to get images and albums based on their stored database ID. Unfortunately, Zenphoto offers only the possibility to get this ID, e.g. via "getAlbumID", but offers no function to get an album or image by its ID :-(
-        xmlrpc_upload.php – receives multipart POST messages and stores the image. The received images will be temporarily saved in the ‘zp-lightroom’ directory. So please make sure that sufficient write permissions are available.
+IXR_Library.inc.php? – 3rd party PHP class to handle XML client/server communication (this class is also used e.g. by WordPress)
+xmlprc.php – contains functions to access the Zenphoto-API, e.g. to read data and make any changes. The service will not write to the database via SQL. Any changes are made via Zenphoto-API calls. So it should be save in any way! Nevertheless, there are some SQL-statements used to get images and albums based on their stored database ID. Unfortunately, Zenphoto offers only the possibility to get this ID, e.g. via "getAlbumID", but offers no function to get an album or image by its ID :-(
+xmlrpc_upload.php – receives multipart POST messages and stores the image. The received images will be temporarily saved in the ‘zp-lightroom’ directory. So please make sure that sufficient write permissions are available.
 
 **Configuration?**
 lr_publishing
 
-    Go to the Publish Service section of Lightroom and select the “Zenphoto Publisher”
-    Enter a name for the service (any string is possible)
-    Enter the URL of your Zenphoto server (without “http”)
-    Optional: if you have decided to change the default path of the web service you can enter a new path (without a trailing slash)
-    Press “Save” to create a new service
-    Open the Publish Service again and login (enter admin username and password)
-    lr_login
-    When the username and the password but also the given Zenphoto-URL and the path to the web service are correct you will see that you are logged-in.
-    The buttons “Sync Albums” and “Full Sync” are now enabled.
-        “Sync Albums”? – will read information for all albums from your server and will create corresponding albums (in Lightroom terminology: collections) in Lightroom
-        “Full Sync”? – will do the same as “Sync albums” but will also read information for all images from Zenphoto and assign them to Lightroom when the images are in your current catalog. (ATTENTION: Windows user please see Bugs and Limitation section below)?
-    Please close the Publishing Manager now
-    You should now be ready to work!
+Go to the Publish Service section of Lightroom and select the “Zenphoto Publisher”
+Enter a name for the service (any string is possible)
+Enter the URL of your Zenphoto server (without “http”)
+Optional: if you have decided to change the default path of the web service you can enter a new path (without a trailing slash)
+Press “Save” to create a new service
+Open the Publish Service again and login (enter admin username and password)
+lr_login
+When the username and the password but also the given Zenphoto-URL and the path to the web service are correct you will see that you are logged-in.
+The buttons “Sync Albums” and “Full Sync” are now enabled.
+    “Sync Albums”? – will read information for all albums from your server and will create corresponding albums (in Lightroom terminology: collections) in Lightroom
+    “Full Sync”? – will do the same as “Sync albums” but will also read information for all images from Zenphoto and assign them to Lightroom when the images are in your current catalog. (ATTENTION: Windows user please see Bugs and Limitation section below)?
+Please close the Publishing Manager now
+You should now be ready to work!
 
 When you have created your service the first time you will need to make an initial sync with your Zenphoto web server. You can do this first sync via the buttons “Sync Albums” and “Full Sync” as explained above or via the special "Maintenance" ?collection.
 
@@ -60,7 +60,6 @@ Please note: all Lightroom collections will be removed when you press "Sync albu
 
 Once you have synced Lightroom and Zenphoto you will see a list of all you albums already published in Zenphoto and the albums will contain the images (under the assumption that the images on Zenphoto are available in your current active catalog, too). Now you are able to:
 lz_publishinglist lr_menu??
-
     create, rename, delete or modify albums
     assign images to your albums
     remove images from your albums
@@ -68,7 +67,6 @@ lz_publishinglist lr_menu??
 The album creation and edit functionalities are very similar. A dialog as shown below pops-up and allows you to enter some general data as used to in Zenphoto.
 lz_edit?
 Provided functions
-
     two-way sync with all albums and images already installed on your Zenphoto installation
     create albums
     delete albums
@@ -103,8 +101,7 @@ My filenames contain an apostrophe and I cannot publish any photos
 
 Please change the “Upload method” to “XML data”. Until now I couldn’t find any way to cast an apostrophe for the Multipart-POST, but “XML data” is working.
 Changelog
-Bugs & Limitations
-
-    Due to a bug in Lightroom, the Zenphoto sub-albums are not yet fully supported
-    Lightroom crashed sometimes when using the Sync buttons from inside the Publishing Manager. This seems to happen under Vista only, and is already announced as a bug to Adobe. I never have experienced catalog damages – but nevertheless: use it on your own risk. If you afraid problems then make use of the sync buttons from withing the “Maintenance” collection. This works in any case!
-    ATTENTION: do never ever make an album part of itself or of an containing sub-album. Usually, there should be fired an exception by Zenphoto, but it doesn’t happen… :-(
+*Bugs & Limitations*
+Due to a bug in Lightroom, the Zenphoto sub-albums are not yet fully supported
+Lightroom crashed sometimes when using the Sync buttons from inside the Publishing Manager. This seems to happen under Vista only, and is already announced as a bug to Adobe. I never have experienced catalog damages – but nevertheless: use it on your own risk. If you afraid problems then make use of the sync buttons from withing the “Maintenance” collection. This works in any case!
+ATTENTION: do never ever make an album part of itself or of an containing sub-album. Usually, there should be fired an exception by Zenphoto, but it doesn’t happen… :-(
