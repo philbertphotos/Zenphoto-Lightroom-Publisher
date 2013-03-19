@@ -295,7 +295,7 @@ end
 					fill_horizontal = 1,
 					height_in_lines = 8,
 					width = 70,
-					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Maintenance". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. Please click now the "Sync albums" or "Sync all images" button for the initial sync with your Zenphoto server and Lightroom.\n\nFurther details and instructions can be found on www.elementalshoots.com.',
+					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Maintenance". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. Please click now the "Sync albums" or "Sync all images" button for the initial sync with your Zenphoto server and Lightroom.\n\nFurther details and instructions can be found on  http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher/.',
 				},
 			},
 			
