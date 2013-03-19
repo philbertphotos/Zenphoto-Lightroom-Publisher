@@ -111,16 +111,16 @@ if prefs.logLevel ~= not 'none' then
 log:trace("ZenphotoUser.initLogin")
 end
 --local pubServices = LrPublishService.publishService.localIdentifier
-	local tableID = prefs.publishServiceID
-	log:trace("tableID: "..tableID)
+	-- local tableID = prefs.publishServiceID
+	--log:trace("tableID: "..tableID)
 				prefs.instanceTable = {}
 				log:info("Inserting login instance")
 				--prefs.instanceTable = {}
-				table.insert(prefs.instanceTable,tableID,{
-					username = prefs.username,
-					password = prefs.password				
-					}
-				)					
+				--table.insert(prefs.instanceTable,tableID,{
+					--username = prefs.username,
+					--password = prefs.password				
+					--}
+				--)					
 	--checkuser = prefs.instanceTable[instanceId].webpath
 --log:trace("checkuser:" ..checkuser)
 
