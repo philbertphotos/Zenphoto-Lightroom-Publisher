@@ -1,11 +1,14 @@
 --[[----------------------------------------------------------------------------
 
 Plug-in Name: Zenphoto Publisher
-Version: 2.1.201207072318
-Author URI: http://www.lokkju.com / http://www.lokiphoto.com
-Author URI: http://www.elementalpress.com / http://www.elementalshoots.com
+Version: 3.0.1
+Author URI: http://www.lokkju.com
+Author URI: http://www.elementalpress.com
 Author: Loki
 Author: L. Hagen
+----------------------
+Developer: Joseph Philbert 
+Developer URI: http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher
 
 ------------------------------------------------------------------------------]]
 
@@ -14,11 +17,11 @@ return
 	LrSdkVersion = 3.0,
 	LrSdkMinimumVersion = 3.0,
 
-	LrToolkitIdentifier = 'zenphoto.publisherZ',
+	LrToolkitIdentifier = 'zenphoto.lightroom.publisher',
 	LrPluginName = 'ZenPhoto Publisher',
 	LrPluginInfoUrl = 'http://code.google.com/p/zenphoto-publisher/',
 
-	VERSION = { major=2, minor=1, revision=201207072318, nil, },
+	VERSION = { major=3, minor=0, revision=1, nil, },
 
 	LrPluginInfoProvider = 'ZenphotoPluginInfoProvider.lua',
 
