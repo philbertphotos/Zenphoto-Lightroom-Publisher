@@ -1,10 +1,9 @@
 Zenphoto Lightroom Publisher
 ============================
-Developed by Joseph Philbert based on Nick Jacobson (lokkju) changes originally developed by Lars Hagen (desgphoto)
+Currently being developed by Joseph Philbert based off the work of Nick Jacobson (lokkju) originally developed by Lars Hagen (desgphoto)
 
-A Lightroom 3 and 4 publishing service tool. The service gives you the possibility to sync Lightroom with your Zenphoto installation.
-
-Today I like to introduce a updated plug-in for Lightroom 3 and 4 and uses the Lightroom publishing service that gives you the possibility to sync Lightroom with your Zenphoto installation – but in an intelligent and very easy to use way.
+This is a Lightroom 3 and 4 publishing service plugin, it gives you the ability to sync Lightroom with your Zenphoto installation.
+The Lightroom publishing service that gives you the possibility to sync Lightroom with your Zenphoto installation – but in an intelligent and very easy to use way.
 
 The new publishing service feature of Lightroom gives you the possibility to monitor and manage exported images on different web services. Whenever you make changes on published photos (e.g. change the image settings or some of the metadata in Lightroom), these photos will be monitored and marked, automatically. You can now republish all these photos with a single click.
 
@@ -13,20 +12,21 @@ Furthermore, whenever you add or remove photos from your published collections, 
 _**How does the service work?**_
 After you have installed the service via the Lightroom "Plug-in Manager", you have to enter the host of your Zenphoto installation. In the next step press the login button and enter your username and the password. You must be a Zenphoto administrator to be able to login. All other Zenphoto accounts are not allowed to access the web service.
 
-After you successfully logged-in you can sync with your already uploaded images. When pressing the "Sync Album" or the "Sync Photos" ?button, all Zenphoto albums will be read and created as collections as part of the "Lightroom 2 Zenphoto" service. Therefore the plug-in will connect to the web server and will gather information of your already uploaded albums and images (e.g. the album name, the filename and the URL).
+After you successfully logged-in you can sync with your already uploaded images. When pressing the "Sync Album" or the "Sync Photos" ?button, all Zenphoto albums will be read and created as collections as part of the "Lightroom Zenphoto" service. Therefore the plug-in will connect to the web server and will gather information of your already uploaded albums and images (e.g. the album name, the filename and the URL).
 
-This information is used to to find the images within your current active catalog. If an image was found, it will be assigned to the corresponding collection of the "Lightroom 2 Zenphoto" service.
+This information is used to to find the images within your current active catalog. If an image was found, it will be assigned to the corresponding collection of the "Lightroom Zenphoto" service.
 
 Finally, you will get an infobox showing you the images which were not found in your current catalog but are available in your Zenphoto installation.
 
 Once you have synced with your Zenphoto installation you can assign any image you like to an album (or – in Lightroom terminology – collection). When you now change any metadata of published images, these images will be automatically marked to be republished the next time you push the "Publish" button.
 
-Please see the Lightroom 3 documentation for details on how it works.
+Please see the Lightroom documentation for details on how it works.
 
 **Installation**
-
 The installation is very simple. The download comes as a ZIP-file which contains two directories:
-ZenphotoPublisher.lrplugin? – is the Lightroom plug-in which must be installed from the Lightroom Plugin Manager
+
+ZenphotoPublisher.lrplugin – is the Lightroom plug-in which must be installed from the Lightroom Plugin Manager 
+
 zp-lightroom - the web service which makes the interaction between Lightroom an Zenphoto possible. Please copy this directory as it is into the "PLUGIN" path of your Zenphoto installation. All communication between Lightroom and Zenphoto is done via XML-calls?:
 
 IXR_Library.inc.php? – 3rd party PHP class to handle XML client/server communication (this class is also used e.g. by WordPress)
