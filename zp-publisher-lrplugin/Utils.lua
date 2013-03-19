@@ -6,10 +6,11 @@ some utilities and helper functions
 ------------------------------------------------------------------------------]]
 
 local LrDialogs 		= import 'LrDialogs'
+local LrLogger          = import 'LrLogger'
+local prefs 			= import 'LrPrefs'.prefsForPlugin()
 
-local logger = import 'LrLogger'( 'ZenphotoUser' )
-logger:enable('print')
-local debug, info, warn, err = logger:quick( 'debug', 'info', 'warn', 'err' )
+    -- Logger
+local log = LrLogger( 'ZenphotoLog' )
 
 Utils = {}
 
@@ -250,35 +251,64 @@ Utils = {}
 		fh:close()
 	end
 
-	
-	
+function isBlank(x)
+  return not not tostring(x):find("^%s*$")
+end
+
 	--
 	--	table dump
 	--
 	function tdump(t)
 	  local function dmp(t, l, k)
 		if type(t) == "table" then
-		  debug(string.format("%s%s:", string.rep(" ", l*2), tostring(k)))
+		if prefs.logLevel == 'verbose' then
+		  log:debug('tdump:',string.format("%s%s:", string.rep(" ", l*2), tostring(k)))
+		end
 		  for k, v in pairs(t) do
 			dmp(v, l+1, k)
 		  end
 		else
-		  debug(string.format("%s%s:%s", string.rep(" ", l*2), tostring(k), tostring(t)))
+		if prefs.logLevel == 'verbose' then
+		  log:debug(string.format('tdump:', "%s%s:%s", string.rep(" ", l*2), tostring(k), tostring(t)))
+		end
 		end
 	  end
 	  
 	  dmp(t, 1, "root")
 	end
-	
-	
 
+
+	
 	function table_keys(t)
 	  local ks = {}
 	  for k in pairs(t) do ks[#ks+1] = k end
 	  return ks
 	end
 	
-	
+function CurrentTime()
+   local F = [[%%a=%a
+%%A=%A 
+%%b=%b 
+%%B=%B 
+%%c=%c 
+%%d=%d 
+%%H=%H 
+%%I=%I 
+%%j=%j 
+%%m=%m 
+%%M=%M 
+%%p=%p 
+%%S=%S 
+%%U=%U 
+%%w=%w
+%%W=%W
+%%x=%x
+%%X=%X
+%%y=%y   
+%%Y=%Y    
+]]
+   return os.date(F, os.time())
+end
 	
 
 	function pairsByKeys (t, f) 
@@ -298,24 +328,6 @@ Utils = {}
 		end 
 		return iter 
 	end 
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 function table.clone(t, nometa) 
    local u = {} 
@@ -449,3 +461,78 @@ function table.clone(t, nometa)
     
    return table.concat(output) 
  end 
+ 
+function serialize(t)
+  local serializedValues = {}
+  local value, serializedValue
+  for i=1,#t do
+    value = t[i]
+    serializedValue = type(value)=='table' and serialize(value) or value
+    table.insert(serializedValues, serializedValue)
+  end
+  return string.format("{ %s }", table.concat(serializedValues, ', ') )
+end
+
+-- Is Str an identifier?
+local function IsIdent(Str)
+ return not Keywords[Str] and string.find(Str, "^[%a_][%w_]*$")
+end
+
+-- Converts a non-table to a Lua- and human-readable string:
+local function ScalarToStr(Val)
+ local Ret
+ local Type = type(Val)
+ if Type == "string" then
+   Ret = StrToStr(Val)
+ elseif Type == "function" or Type == "userdata" or Type == "thread" then
+   -- Punt:
+   Ret = "<" .. _tostring(Val) .. ">"
+ else
+   Ret = _tostring(Val)
+ end -- if
+ return Ret
+end
+
+-- Converts a table to a Lua- and human-readable string.
+local function TblToStr(Tbl, Seen)
+ Seen = Seen or {}
+ local Ret = {}
+ if not Seen[Tbl] then
+   Seen[Tbl] = true
+   local LastArrayKey = 0
+   for Key, Val in pairs(Tbl) do
+     if type(Key) == "table" then
+       Key = "[" .. TblToStr(Key, Seen) .. "]"
+     elseif not IsIdent(Key) then
+       if type(Key) == "number" and Key == LastArrayKey + 1 then
+         -- Don't mess with Key if it's an array key.
+         LastArrayKey = Key
+       else
+         Key = "[" .. ScalarToStr(Key) .. "]"
+       end
+     end
+     if type(Val) == "table" then
+       Val = TblToStr(Val, Seen)
+     else
+       Val = ScalarToStr(Val)
+     end
+     Ret[#Ret + 1] =
+       (type(Key) == "string"
+         and (Key .. " = ") -- Explicit key.
+         or "") -- Implicit array key.
+       .. Val
+   end
+   Ret = "{" .. table.concat(Ret, ", ") .. "}"
+ else
+   Ret = "<cycle to " .. _tostring(Tbl) .. ">"
+ end
+ return Ret
+end
+
+-- A replacement for tostring that prints tables in Lua- and
+--[[ human-readable format:
+function tostring(Val)
+ return type(Val) == "table"
+   and TblToStr(Val)
+   or _tostring(Val)
+end--]]
