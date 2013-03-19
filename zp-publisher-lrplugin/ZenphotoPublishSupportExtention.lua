@@ -21,9 +21,8 @@ local bind 		= LrView.bind
 require 'ZenphotoAPI'
 
     -- Logger
-local logger = LrLogger( 'publishSupportExtention' )
-logger:enable( "print" )
-local debug, info, warn, err = logger:quick( 'debug', 'info', 'warn', 'err' )
+local LrLogger = import 'LrLogger'
+local log = LrLogger( 'ZenphotoLog' )
 
 --============================================================================--
 
@@ -32,7 +31,10 @@ publishServiceExtention = {}
 --------------------------------------------------------------------------------
 
 function publishServiceExtention.getImages( publishedCollection, id, publishService, context)
-	info('reading images from server...')
+	log:info('reading images from server...')
+if prefs.logLevel ~= not 'none' then
+log:trace("'reading images from server...'")
+end
 	
     local progressScope = LrDialogs.showModalProgressDialog({
       title = 'Syncing image data from server',
@@ -86,7 +88,7 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 		
 		if photo then
 			catalog:withWriteAccessDo('add photo to collection', function()
-				info("+ photo: " .. photo:getFormattedMetadata( 'fileName' ))
+				log:info("+ photo: " .. photo:getFormattedMetadata( 'fileName' ))
 				publishedCollection:addPhotoByRemoteId( photo, image.id, image.url, true )
 			end)
 		else
@@ -95,7 +97,7 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 		end
 	end
 
-	info('reading images from server...done')
+	log:info('reading images from server...done')
 	LrTasks.yield()
 	progressScope:done()
 
@@ -172,14 +174,6 @@ function publishServiceExtention.selectPhoto(photos, catalog)
 	return selectedPhoto
 end
 
-
-
-
-
-
-
-
-
 function publishServiceExtention.findRoot(collection)
 	local root
 	
@@ -219,7 +213,7 @@ function publishServiceExtention.getAllPublishedPhotos(collection, arrayOfPublis
 
 	if collection:type() == 'LrPublishedCollection' then
 		for j, publishedPhoto in pairs (collection:getPublishedPhotos()) do
-			debug(publishedPhoto)
+			log:debug("publishServiceExtention.getAllPublishedPhotos", publishedPhoto)
 			table.insert(arrayOfPublishedPhotos, publishedPhoto)
 		end
 	end
@@ -249,6 +243,3 @@ function publishServiceExtention.collectionNameExists( publishService, name )
 	end
 	return false
 end
-
-
-
