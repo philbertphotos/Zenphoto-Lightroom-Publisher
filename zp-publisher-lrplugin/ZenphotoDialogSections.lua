@@ -170,7 +170,7 @@ end
 					text_color = import 'LrColor'( 0, 0, 1 ),
 					mouse_down = function(self) 
 						local LrHttp = import 'LrHttp' 
-						LrHttp.openUrlInBrowser('https://github.com/philbertphotos/zenphoto-publisher') 
+						LrHttp.openUrlInBrowser('http://www.fb.com/philbertphotography') 
 					end,
 					[ WIN_ENV and 'adjustCursor' or 'adjust_cursor' ] = function(self)
 						self.text_color = import 'LrColor'( 1, 0, 0 )
