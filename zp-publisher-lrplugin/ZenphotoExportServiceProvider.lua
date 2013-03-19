@@ -27,12 +27,9 @@ local util              = require 'Utils'
 
 local bind = LrView.bind
 local share = LrView.share
-
     -- Logger
-local logger = LrLogger( 'exportServiceProvider' )
-logger:enable( "print" )
-local debug, info, warn, err = logger:quick( 'debug', 'info', 'warn', 'err' )
-
+local LrLogger = import 'LrLogger'
+local log = LrLogger( 'ZenphotoLog' )
 
 --============================================================================--
 
@@ -65,11 +62,16 @@ exportServiceProvider.exportPresetFields = {
 
 
 function exportServiceProvider.startDialog( propertyTable )
+if prefs.logLevel ~= not 'none' then
+log:trace("exportServiceProvider.startDialog")
+end
 
 	if not propertyTable.LR_publishService then	return end
 
 	local publishService = propertyTable.LR_publishService
 	publishServiceID = publishService.localIdentifier
+	log:info("publishServiceID:" ..publishServiceID)
+	prefs.publishServiceID = publishServiceID
 
 --[[
 	if not prefs then
@@ -82,7 +84,7 @@ function exportServiceProvider.startDialog( propertyTable )
 	end
 ]]--	
 	prefs.serviceIsRunning = publishService
-
+log:info("prefs.serviceIsRunning")
 	if prefs.serviceIsRunning then
 		propertyTable.serviceIsRunning = true
 		propertyTable.publishServiceID = publishServiceID
@@ -110,8 +112,8 @@ function exportServiceProvider.startDialog( propertyTable )
 	end)
 
 	
-	propertyTable.webpath = prefs.webpath or '/zp-lightroom'
-	prefs.webpath = propertyTable.webpath
+	propertyTable.webpath = '/plugins/zp-lightroom/' --prefs.webpath or '/plugins/zp-lightroom/'
+	prefs.webpath = '/plugins/zp-lightroom/' --propertyTable.webpath
 	propertyTable:addObserver( 'webpath', function() 
 		prefs.webpath = propertyTable.webpath
 		ZenphotoUser.resetLogin( propertyTable )
@@ -121,9 +123,86 @@ function exportServiceProvider.startDialog( propertyTable )
 	if not prefs.missing then
 		prefs.missing = {}
 	end
-
 	
+		instanceId = 0
+
+		if instanceId ~= nil then
+		log:trace("instanceId not nil = "..instanceId)
+	else
+		log:trace("instanceId is nil = "..instanceId)
+	end
+	
+			-- creating instance table in prefs
+				if prefs.instanceTable == nil then
+					log:info("Creating instance table")
+					prefs.instanceTable = {}
+				end					
+				
+--[[				-- insert a new instance
+				log:info("Inserting new instance")
+				table.insert(prefs.instanceTable,
+					{
+					webpath = propertyTable.webpath
+					}
+				)		
+		-- set instanceId
+		if (arg ~= nil and #arg > 0) then
+			if type(arg[1]) == 'number' then
+				log:info("got instanceId "..arg[1])
+				instanceId = arg[1] 
+			end
+		end 
+
+		-- fill edit fields if a server has been passed
+		if instanceId == 0 then
+			propertyTable.host = 'www.yourwebserver.com'
+			propertyTable.username = 'changeme'
+			propertyTable.password = ' '
+			propertyTable.webpath = '/plugins/zp-lightroom/'
+		else
+			--propertyTable.host = prefs.instanceTable[instanceId].host
+			--propertyTable.webpath = prefs.instanceTable[instanceId].webpath
+			--propertyTable.username = prefs.instanceTable[instanceId].username
+			--propertyTable.password = prefs.instanceTable[instanceId].password
+log:info('check nil:',propertyTable.webpath)
+			--prefs.instanceTable[instanceId].host = propertyTable.host
+			prefs.instanceTable[instanceId].webpath = propertyTable.webpath
+			--prefs.instanceTable[instanceId].username = propertyTable.username
+			--prefs.instanceTable[instanceId].password = propertyTable.password
+		end --]]
+	
+	--instanceId = publishServiceID
+	if prefs.instanceTable and not nil then
+			-- creating server table in prefs
+				if prefs.instanceTable == nil then
+					log:info("Creating publisher instance")
+					prefs.instanceTable = {}
+				end
+				
+				--[[table.insert (myTable , 2, true)
+            result  --> = myTable[1] == 5
+                myTable[2] == true
+                myTable[3] == "Luna"--]]
+				
+				-- insert a new instance
+				log:info("Inserting new instance")
+				table.insert(prefs.instanceTable,publishServiceID,
+					{
+					--label = properties.label,
+					webpath = propertyTable.webpath,
+					}
+				)
+							else
+				-- update instance
+				prefs.instanceTable[instanceId].webpath = propertyTable.webpath
+				--prefs.instanceTable[instanceId].username = propertyTable.username
+				--prefs.instanceTable[instanceId].password = propertyTable.webpath
+			end
+	log:trace("webpath:",propertyTable.webpath)
+	--log:debug("check instance table1: ",tostring(prefs.instanceTable))
 tdump(prefs)
+--log:trace("tdump:",tdump)
+log:trace('test:',propertyTable.webpath)
 	
 end
 
@@ -132,7 +211,9 @@ end
 
 
 function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
-
+if prefs.logLevel ~= not 'none' then
+log:trace("exportServiceProvider.sectionsForTopOfDialog")
+end
     return {
 			{
 			title = "Login to ZenPhoto",
@@ -152,7 +233,7 @@ function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 				},
 			},
 
-			f:row {
+			--[[f:row {
 				f:static_text {
 					title = 'Enter relative path to the webservice directory:',
 					width = 300,
@@ -163,7 +244,7 @@ function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 					value = bind 'webpath',
 					immediate = true,
 				},
-			},
+			},--]]
 		
 			f:row {
 				f:static_text {
@@ -304,7 +385,7 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 
 			
 		for i, album in pairs ( albums ) do
-			info("add album: -" .. tostring(album.name) .. "-")
+			log:info("add album: -" .. tostring(album.name) .. "-")
 
 			progressScope:setCaption('reading album: ' .. tostring(album.name) .. ' (' .. i .. ' of ' .. #albums .. ')' )
 			progressScope:setPortionComplete( i, #albums )
@@ -333,7 +414,7 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 	if fullsync then
 		local missing = {}
 		
-		info('start syncing album and images')
+		log:info('start syncing album and images')
 		for i, pubCollection in pairs (publishService:getChildCollections()) do
 
 			LrTasks.yield()
@@ -348,7 +429,7 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 				end)
 			end
 		end
-		info('finish syncing album and images')
+		log:info('finish syncing album and images')
 		
 		if #missing > 0 then Utils.showMissingFilesDialog(missing) end
 		
@@ -442,7 +523,7 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 		local photo = rendition.photo
 		local photoname = photo:getFormattedMetadata('fileName')
 
-		info('Getting next photo...' .. photoname)
+		log:info('Getting next photo...' .. photoname)
 		
 		if not rendition.wasSkipped then
 			
