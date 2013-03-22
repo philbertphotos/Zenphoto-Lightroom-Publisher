@@ -414,7 +414,7 @@ function ZenphotoAPI.getSingleValueXML(xmlResponse)
 
 	-- show when image was not found
 	if responseDocument:name() == "fault" then
-		debug(ZenphotoAPI.getXMLError(xmlResponse))
+		log:debug(ZenphotoAPI.getXMLError(xmlResponse))
 	end
 
 	local responseDocument = LrXml.parseXml(xmlResponse)
