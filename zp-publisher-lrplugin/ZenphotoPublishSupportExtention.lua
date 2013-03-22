@@ -89,7 +89,7 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 				publishedCollection:addPhotoByRemoteId( photo, image.id, image.url, true )
 			end)
 		else
-			warn("- photo: " .. imagename)
+			log:info("- photo: " .. imagename)
 			table.insert(missing, imagename)
 		end
 	end
