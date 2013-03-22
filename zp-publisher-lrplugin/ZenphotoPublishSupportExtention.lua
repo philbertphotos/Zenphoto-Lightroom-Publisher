@@ -32,13 +32,10 @@ publishServiceExtention = {}
 
 function publishServiceExtention.getImages( publishedCollection, id, publishService, context)
 	log:info('reading images from server...')
-if prefs.logLevel ~= not 'none' then
-log:trace("'reading images from server...'")
-end
 	
     local progressScope = LrDialogs.showModalProgressDialog({
       title = 'Syncing image data from server',
-      caption = 'load image info from server for album: ' .. publishedCollection:getName(),
+      caption = 'load image log:info from server for album: ' .. publishedCollection:getName(),
       cannotCancel = false,
       functionContext = context,
     })
@@ -213,7 +210,7 @@ function publishServiceExtention.getAllPublishedPhotos(collection, arrayOfPublis
 
 	if collection:type() == 'LrPublishedCollection' then
 		for j, publishedPhoto in pairs (collection:getPublishedPhotos()) do
-			log:debug("publishServiceExtention.getAllPublishedPhotos", publishedPhoto)
+			log:debug(publishedPhoto)
 			table.insert(arrayOfPublishedPhotos, publishedPhoto)
 		end
 	end
