@@ -557,7 +557,7 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 				-- if image uploaded OK
 				--
 				if result then 
-					info ('Image ' .. photoname .. ' uploaded successfully')
+					log:info ('Image ' .. photoname .. ' uploaded successfully')
 					rendition:recordPublishedPhotoId( result.id )
 					rendition:recordPublishedPhotoUrl( result.url )
 				else
