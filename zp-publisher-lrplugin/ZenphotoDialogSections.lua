@@ -17,7 +17,7 @@ local bind 				= LrView.bind
 
     -- Logger
 local log = LrLogger( 'ZenphotoLog' )
---require 'DP_API'
+
 require 'ZenphotoUser'
 
 --============================================================================--
@@ -43,29 +43,24 @@ end
 
 
 function ZenphotoDialogSections.startDialog( propertyTable )
-	--info('ZenphotoDialogSections.startDialog')
 log:info('-------------------------------------')
 log:info('START LOG TIMESTAMP')
 log:info('-------------------------------------')
 	
 if prefs.logLevel ~= not 'none' then
-	--log:trace("Calling ZenphotoDialogSections.startDialog( propertyTable )")
+	log:info('ZenphotoDialogSections.startDialog')
 	end
-	--info('ZenphotoDialogSections.startDialog')
-	
-	
 	-- initialize the log level
 	if propertyTable.logLevel == nil then
 		if prefs.logLevel ~= nil and prefs.logLevel ~= "" then
 			propertyTable.logLevel = prefs.logLevel
 		else
-			propertyTable.logLevel = 'none'
+			propertyTable.logLevel = 'trace'
 		end
 	end
 	
 -- add observer
 	propertyTable:addObserver( 'logLevel', updateLogLevelStatus )
-
 	-- initialize dialog elements
 	updateLogLevelStatus( propertyTable )
 	-- Make sure we're logged in.
@@ -76,7 +71,7 @@ end
 
 function ZenphotoDialogSections.endDialog( propertyTable )
 	if prefs.logLevel ~= not 'none' then
-	--log:trace("Calling ZenphotoDialogSections.endDialog( propertyTable )")
+	log:trace("Calling ZenphotoDialogSections.endDialog")
 	end
 	-- save the log level into the preferences
 	prefs.logLevel = propertyTable.logLevel
@@ -89,9 +84,8 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 end
 	-- Initializations
 
-
 	if propertyTable.logLevel == nil then
-		propertyTable.logLevel = 'none'
+		propertyTable.logLevel = 'trace'
 	end
 	if propertyTable.logSynopsis == nil then
 		propertyTable.logSynopsis = ''
@@ -216,28 +210,28 @@ end
 					height_in_lines = 2,
 					width = 300,
 					title = 'Please use the Issue Tracker link above for any problems you run into.',
-				},
-			
-			f:static_text {	
-			fill_horizontal = 1,
-					width = 100,
-		title = "Debug Settings",
-		tooltip =  bind { key = 'logLevel', object = propertyTable },	
-	},	
-	f:group_box {
-	f:popup_menu {
+				},		
+},
+{
+      title = "Debug Settings",
+	  tooltip =  bind { key = 'logLevel', object = propertyTable },		  
+f:group_box {
+title = "Logging Level:", 
+fill_horizontal = 0,
+spacing = f:control_spacing(),
+f:popup_menu {
 					fill_horizontal = 1,
+					width = 120,
 					items = {
 						{ title = "No Log File", value = 'none' },
-						{ title = "Log File - Errors Only", value = 'errors' },
-						{ title = "Tracing", value = 'trace' },
+						{ title = "Log File - Errors", value = 'errors' },
+						{ title = "Log File - Tracing", value = 'trace' },
 						{ title = "Log File - Debug", value = 'verbose' },
 					},
 					value = bind { key = 'logLevel', object = propertyTable }
-				}
-}				
-},
+				}		
+			}	
+      }
 	
 	}
-
 end	

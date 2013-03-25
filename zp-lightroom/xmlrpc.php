@@ -346,11 +346,13 @@ function deleteAlbum($args) {
 	if (is_object($login_state = authorize($args)))	return $login_state;
 	
 	$args = decode64($args);
-	
-	if (!($album = getAlbumForAlbumID($args['id'])))
+	$album = getAlbumForAlbumID($args['id']);
+	if ($album)
+	$album->remove();
+	else
 		return new IXR_Error(-1, 'No folder with database ID '.$args['id'].' found!');
 
-	$album->deleteAlbum();
+
 }
 
 
@@ -390,7 +392,7 @@ function createAlbum($args) {
 				  'id' => $album->getID(),
 				 'url' => WEBPATH.'index.php?album='.urlencode($album->name).'/',
 			  'folder' => getFolderNode($album->name),
-		'parentFolder' => $album->getParent()->name
+		'parentFolder' => $album->getParent()
 	));
 }
 

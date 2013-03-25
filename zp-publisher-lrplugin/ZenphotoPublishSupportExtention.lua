@@ -14,6 +14,7 @@ local LrProgressScope	= import 'LrProgressScope'
 local LrTasks			= import 'LrTasks'
 local LrErrors			= import 'LrErrors'
 local LrStringUtils		= import 'LrStringUtils'
+local prefs 			= import 'LrPrefs'.prefsForPlugin()
 
 local LrView	= import 'LrView'
 local bind 		= LrView.bind
@@ -79,10 +80,7 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 --			photo = publishServiceExtention.selectPhoto(photos, catalog)
 --		else
 			photo = photos[1]
---		end
-
-		
-		
+--		end		
 		if photo then
 			catalog:withWriteAccessDo('add photo to collection', function()
 				log:info("+ photo: " .. photo:getFormattedMetadata( 'fileName' ))
@@ -90,7 +88,7 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 			end)
 		else
 			log:info("- photo: " .. imagename)
-			table.insert(missing, imagename)
+			table.insert(prefs.instanceTable[instanceID].missing, imagename)
 		end
 	end
 
@@ -100,8 +98,6 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 
 	return missing
 end
-
-
 
 --
 --

@@ -9,14 +9,16 @@ local LrLogger = import 'LrLogger'
 local log = LrLogger( 'ZenphotoLog' )
 -- Zenphoto plugin
 require 'ZenphotoDialogSections'
---require "LRLib_SelfUpdate"
+require "LRLib_SelfUpdate"
+local startD = {}
 local endD = {}
+local startDone = {}
 local endDone = {}
 
---startD.startDialog = function(startDone)
-  --LRLib_SelfUpdate.startDialog(startDone)
-  --ExportToEmailPlugin.startDialog(startDone)
---end
+startD.startDialog = function(startDone)
+  LRLib_SelfUpdate.startDialog(startDone)
+  ZenphotoDialogSections.startDialog(startDone)
+end
 
 
 endD.endDialog = function(endD,endDone)
@@ -26,10 +28,8 @@ end
 
 return {
 startDialog = ZenphotoDialogSections.startDialog,
-	sectionsForTopOfDialog = ZenphotoDialogSections.sectionsForTopOfDialog,
-	
+sectionsForTopOfDialog = ZenphotoDialogSections.sectionsForTopOfDialog,
 --sectionsForBottomOfDialog = LRLib_SelfUpdate.PluginInfoSection,
---sectionsForTopOfDialog = ExportToEmailPlugin.sectionsForTopOfDialog,
-	--startDialog = startD.startDialog, --ExportToEmailPlugin.startDialog,
-	endDialog =  endD.endDialog, --ExportToEmailPlugin.endDialog,
-}	
+startDialog = startD.startDialog,
+	endDialog =  endD.endDialog,
+}

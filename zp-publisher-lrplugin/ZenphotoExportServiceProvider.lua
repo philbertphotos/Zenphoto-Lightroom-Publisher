@@ -50,16 +50,21 @@ exportServiceProvider.allowFileFormats = { 'JPEG' }
 exportServiceProvider.allowColorSpaces = { 'sRGB'  }
 exportServiceProvider.hidePrintResolution = true
 exportServiceProvider.exportPresetFields = {
-		{ key = 'LR_jpeg_quality', default = 0.75 },	
+		{ key = 'LR_jpeg_quality', default = 100 },	
 		{ key = 'LR_size_resizeType', default = 'longEdge' },
-		{ key = 'LR_size_maxHeight', default = '550' },
-		{ key = 'LR_size_maxWidth', default = '550' },
+		{ key = 'LR_size_maxHeight', default = '1024' },
+		{ key = 'LR_size_maxWidth', default = '1024' },
 		{ key = 'LR_outputSharpeningMedia', default = 'screen' },
 		{ key = 'LR_size_doNotEnlarge', default = 'true' },
+		{ key = 'username', default = "yourloginname" },
+		{ key = 'password', default = "password" },
+		{ key = 'host', default = "wwww.yourzenphotoserver.com" },
+		{ key = 'accountStatus', default = "Please fill out the available sections and save to enable this service" },
+		{ key = 'loginButtonTitle', default = "DISABLED" },
+		{ key = 'uploadMethod', default = "POST" },
+		{ key = 'token', default = "" },
 	}
-
 --------------------------------------------------------------------------------
-
 
 function exportServiceProvider.startDialog( propertyTable )
 if prefs.logLevel ~= not 'none' then
@@ -67,25 +72,46 @@ log:trace("exportServiceProvider.startDialog")
 end
 
 	if not propertyTable.LR_publishService then	return end
-
 	local publishService = propertyTable.LR_publishService
 	publishServiceID = publishService.localIdentifier
+	
+	prefs.instanceID = publishServiceID	
+	
+	instanceID = tonumber(trim(prefs.instanceID))
+	
 	log:info("publishServiceID:" ..publishServiceID)
-	prefs.publishServiceID = publishServiceID
 
---[[
-	if not prefs then
-		debug('############ INIT NEW ################')
---		prefs = { }
-		prefs.host = 'www.yourwebserver.com'
-		prefs.webpath = '/zp-lightroom'
-		prefs.uploadMethod = 'POST'		
-		prefs.missing = {}
+	if instanceID ~= nil then
+		log:trace("instanceId not nil = ",prefs.instanceID)
+	else
+		log:trace("instanceId is nil = ",prefs.instanceID)
 	end
-]]--	
-	prefs.serviceIsRunning = publishService
+				--if prefs.instanceTable ~= nil then --or prefs.instanceTable.instanceID ~= true then
+			-- creating instance table in prefs
+				if prefs.instanceTable == nil then
+					log:info("Creating instance table")
+					prefs.instanceTable = {}
+				end			
+				
+if prefs.instanceTable[instanceID] then
+ log:trace("instanceId exsits")
+ else
+  log:trace("Inserting new instance")
+				table.insert(prefs.instanceTable,instanceID,
+					{
+					host = propertyTable.host,
+					webpath = propertyTable.webpath,
+					uploadMethod = propertyTable.uploadMethod,
+					username = "yourname",
+					password = "password",
+					token = "", 
+					}
+				)				
+			end
+			
+	prefs.instanceTable.serviceIsRunning = publishService
 log:info("prefs.serviceIsRunning")
-	if prefs.serviceIsRunning then
+	if prefs.instanceTable.serviceIsRunning then
 		propertyTable.serviceIsRunning = true
 		propertyTable.publishServiceID = publishServiceID
 	else
@@ -97,20 +123,18 @@ log:info("prefs.serviceIsRunning")
 	require 'ZenphotoUser'
 	ZenphotoUser.initLogin( propertyTable )
 
-	propertyTable.host = prefs.host or 'www.yourwebserver.com'
-	prefs.host = propertyTable.host
+	propertyTable.host = prefs.instanceTable[instanceID].host or 'www.yourwebserver.com'
+	prefs.instanceTable[instanceID].host = propertyTable.host
 	propertyTable:addObserver( 'host', function() 
-		prefs.host = propertyTable.host
+		prefs.instanceTable[instanceID].host = propertyTable.host
 		ZenphotoUser.resetLogin( propertyTable )
 	end)
 
-	
-	propertyTable.uploadMethod = prefs.uploadMethod or 'POST'
-	prefs.uploadMethod = propertyTable.uploadMethod
+	propertyTable.uploadMethod = prefs.instanceTable[instanceID].uploadMethod or 'POST'
+	prefs.instanceTable[instanceID].uploadMethod = propertyTable.uploadMethod
 	propertyTable:addObserver( 'uploadMethod', function() 
-		prefs.uploadMethod = propertyTable.uploadMethod
+		prefs.instanceTable[instanceID].uploadMethod = propertyTable.uploadMethod
 	end)
-
 	
 	propertyTable.webpath = '/plugins/zp-lightroom/' --prefs.webpath or '/plugins/zp-lightroom/'
 	prefs.webpath = '/plugins/zp-lightroom/' --propertyTable.webpath
@@ -118,99 +142,22 @@ log:info("prefs.serviceIsRunning")
 		prefs.webpath = propertyTable.webpath
 		ZenphotoUser.resetLogin( propertyTable )
 	end)
-
 	
-	if not prefs.missing then
-		prefs.missing = {}
+	if not prefs.instanceTable[instanceID].missing then
+		prefs.instanceTable[instanceID].missing = {}
 	end
 	
-		instanceId = 0
-
-		if instanceId ~= nil then
-		log:trace("instanceId not nil = "..instanceId)
-	else
-		log:trace("instanceId is nil = "..instanceId)
-	end
-	
-			-- creating instance table in prefs
-				if prefs.instanceTable == nil then
-					log:info("Creating instance table")
-					prefs.instanceTable = {}
-				end					
-				
---[[				-- insert a new instance
-				log:info("Inserting new instance")
-				table.insert(prefs.instanceTable,
-					{
-					webpath = propertyTable.webpath
-					}
-				)		
-		-- set instanceId
-		if (arg ~= nil and #arg > 0) then
-			if type(arg[1]) == 'number' then
-				log:info("got instanceId "..arg[1])
-				instanceId = arg[1] 
-			end
-		end 
-
-		-- fill edit fields if a server has been passed
-		if instanceId == 0 then
-			propertyTable.host = 'www.yourwebserver.com'
-			propertyTable.username = 'changeme'
-			propertyTable.password = ' '
-			propertyTable.webpath = '/plugins/zp-lightroom/'
-		else
-			--propertyTable.host = prefs.instanceTable[instanceId].host
-			--propertyTable.webpath = prefs.instanceTable[instanceId].webpath
-			--propertyTable.username = prefs.instanceTable[instanceId].username
-			--propertyTable.password = prefs.instanceTable[instanceId].password
-log:info('check nil:',propertyTable.webpath)
-			--prefs.instanceTable[instanceId].host = propertyTable.host
-			prefs.instanceTable[instanceId].webpath = propertyTable.webpath
-			--prefs.instanceTable[instanceId].username = propertyTable.username
-			--prefs.instanceTable[instanceId].password = propertyTable.password
-		end --]]
-	
-	--instanceId = publishServiceID
-	if prefs.instanceTable and not nil then
-			-- creating server table in prefs
-				if prefs.instanceTable == nil then
-					log:info("Creating publisher instance")
-					prefs.instanceTable = {}
-				end
-				
-				--[[table.insert (myTable , 2, true)
-            result  --> = myTable[1] == 5
-                myTable[2] == true
-                myTable[3] == "Luna"--]]
-				
-				-- insert a new instance
-				log:info("Inserting new instance")
-				table.insert(prefs.instanceTable,publishServiceID,
-					{
-					--label = properties.label,
-					webpath = propertyTable.webpath,
-					}
-				)
-							else
-				-- update instance
-				prefs.instanceTable[instanceId].webpath = propertyTable.webpath
-				--prefs.instanceTable[instanceId].username = propertyTable.username
-				--prefs.instanceTable[instanceId].password = propertyTable.webpath
-			end
-	log:trace("webpath:",propertyTable.webpath)
-	--log:debug("check instance table1: ",tostring(prefs.instanceTable))
-tdump(prefs)
---log:trace("tdump:",tdump)
-log:trace('test:',propertyTable.webpath)
-	
+		if prefs.logLevel == 'verbose' then
+		  	tdump(prefs)
+		end
 end
 
 
 --------------------------------------------------------------------------------
-
-
 function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
+	-- set global publishServiceID to identify the current prefs
+	--publishServiceID = localIdentifier
+	--prefs.publishServiceID = trim(publishServiceID)
 if prefs.logLevel ~= not 'none' then
 log:trace("exportServiceProvider.sectionsForTopOfDialog")
 end
@@ -233,19 +180,6 @@ end
 				},
 			},
 
-			--[[f:row {
-				f:static_text {
-					title = 'Enter relative path to the webservice directory:',
-					width = 300,
-				},
-
-				f:edit_field {
-					fill_horizontal = 1,
-					value = bind 'webpath',
-					immediate = true,
-				},
-			},--]]
-		
 			f:row {
 				f:static_text {
 					fill_horizontal = 1,
@@ -293,9 +227,9 @@ end
 
 				f:static_text {
 					fill_horizontal = 1,
-					height_in_lines = 8,
+					height_in_lines = 9,
 					width = 70,
-					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Maintenance". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. Please click now the "Sync albums" or "Sync all images" button for the initial sync with your Zenphoto server and Lightroom.\n\nFurther details and instructions can be found on  http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher/.',
+					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Sync Albums/Images". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. Please click now the "Sync albums" or "Sync all images" button for the initial sync with your Zenphoto server and Lightroom.\n\nFurther details and instructions can be found on http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher.',
 				},
 			},
 			
@@ -359,10 +293,6 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 
 	local catalog = import 'LrApplication'.activeCatalog()
 	local albums = ZenphotoAPI.getAlbums()
-
---	local publishServices = catalog:getPublishServices( _PLUGIN.id )
---	local publishService = publishServices[1]
-
 	LrFunctionContext.callWithContext('sync Albums', function(context)
 
 		local progressScope = LrDialogs.showModalProgressDialog({
@@ -421,10 +351,10 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 			
 			remoteId = pubCollection:getRemoteId()
 
-			if remoteId and pubCollection:getName() ~= 'Maintenance' then
+			if remoteId and pubCollection:getName() ~= 'Sync Albums/Images' then
 				LrFunctionContext.callWithContext('sync Images', function(context)
 					result = publishServiceExtention.getImages( pubCollection, remoteId, nil, context)
-					prefs.missing[remoteId] = result
+					prefs.instanceTable[instanceID].missing[remoteId] = result
 					missing = Utils.joinTables(missing, result)
 				end)
 			end
@@ -487,11 +417,6 @@ end
 
 
 function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
-	
-	-- set global publishServiceID to identify the current prefs
-	publishServiceID = exportContext.publishService.localIdentifier
-
-
 	-- Check for photos that have been uploaded already.
 	local exportSession = exportContext.exportSession
 
@@ -504,8 +429,6 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 													and LOC( "$$$/zenphoto/Upload/Progress=Uploading ^1 photos to ZenPhoto", nPhotos )
 													or LOC "$$$/zenphoto/Upload/Progress/One=Uploading one photo to ZenPhoto",
 										}
-
-	
 	local propertyTable = {}
 
 	-- check if in Publish Service or not ("not" is the normal export)
@@ -560,11 +483,17 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 					log:info ('Image ' .. photoname .. ' uploaded successfully')
 					rendition:recordPublishedPhotoId( result.id )
 					rendition:recordPublishedPhotoUrl( result.url )
+--write information to metadata			
+log:info ('write information to custom metadata')
+        photo.catalog:withWriteAccessDo( "set.metadata",
+                                    function()
+	photo:setPropertyForPlugin(_PLUGIN,"uploaded","true")
+	photo:setPropertyForPlugin(_PLUGIN,"albumurl",result.url)
+                                    end)
 				else
 					-- upload was not successful and returned an error
 					LrDialogs.message( 'Unable to upload image ' .. photoname, errors, 'critical' )
 				end
-				
 				-- Adjust progesss scope
 				progressScope:setPortionComplete(i, nPhotos)
 				
@@ -576,4 +505,4 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 	progressScope:done()
 end
 
-return exportServiceProvider	
+return exportServiceProvider

@@ -26,14 +26,12 @@ ZenphotoAPI = {}
 --------------------------------------------------------------------------------
 
 function initRequestParams()
+	log:info('initRequestParams')
 	local paramMap = {}
+	local ind = tonumber(prefs.instanceID)
 
---	if not publishServiceID then
---		error("publishServiceID not set")
---	end
-	
-	local username = prefs.username
-	local password = prefs.password
+	local username = prefs.instanceTable[ind].username
+	local password = prefs.instanceTable[ind].password
 
 	table.insert( paramMap, { paramName = 'loginUsername', paramType = 'string', paramValue = username } )
 	table.insert( paramMap, { paramName = 'loginPassword', paramType = 'string', paramValue = password } )
@@ -76,7 +74,7 @@ function ZenphotoAPI.authorize( login, password )
 		auth = false
 		showMsg = true
 	else
---		log:info('Authorization successful')
+		log:info('Authorization successful')
 		auth = true
 		showMsg = false	
 	end	
@@ -84,9 +82,7 @@ function ZenphotoAPI.authorize( login, password )
 	return auth, showMsg
 end	
 
-
 --------------------------------------------------------------------------------
-
 
 function ZenphotoAPI.uploadPhoto( filePath, params )
 	log:info('Uploading POST photo: ' .. filePath)
@@ -110,9 +106,7 @@ function ZenphotoAPI.uploadPhoto( filePath, params )
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
 end
 
-
 --------------------------------------------------------------------------------
-
 
 function ZenphotoAPI.uploadXMLPhoto( filename, params, file )
 	log:info('Uploading XML photo: ' .. filename)
@@ -129,26 +123,6 @@ function ZenphotoAPI.uploadXMLPhoto( filename, params, file )
 --	log:info(xmlResponse)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
-end
-
---------------------------------------------------------------------------------
-
-function ZenphotoAPI.deletePhoto(propertyTable, params)
-	log:info('Delete photo from server')
-	
-	ZenphotoAPI.initPublishServiceID(propertyTable)
-	
---	publishServiceID = assert( log:info.publishService.localIdentifier )
-	local paramMap = initRequestParams()
-	for key,value in pairs(params) do 
-		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
-	end
-	log:info(paramMap)
-	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.delete', paramMap, true )
-
-	log:info(xmlResponse)
-	
-	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
 
 --------------------------------------------------------------------------------
@@ -190,20 +164,35 @@ function ZenphotoAPI.getAlbumImages(id)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
 end
+--------------------------------------------------------------------------------
 
+function ZenphotoAPI.deletePhoto(propertyTable, params)
+	log:info('Delete photo from server')
+	
+	ZenphotoAPI.initPublishServiceID(propertyTable)
+
+	local paramMap = initRequestParams()
+	for key,value in pairs(params) do 
+		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
+	end
+	log:info(paramMap)
+	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.delete', paramMap, true )
+
+	log:info("deletePhoto.xmlResponse: " .. xmlResponse)
+	
+	return ZenphotoAPI.getSingleValueXML(xmlResponse)
+end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.deleteAlbum( propertyTable, albumId )
 	log:info('Delete album from server with imageId: ' .. albumId)
-	
---	ZenphotoAPI.initPublishServiceID(propertyTable)
 
 	local paramMap = initRequestParams()
+		log:info(paramMap)
 	table.insert( paramMap, { paramName = 'id', paramType = 'string', paramValue = albumId } )
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.delete', paramMap, true )
-
---	log:info(xmlResponse)
-	
+--log:info(paramMap)
+	log:info("deleteAlbum.xmlResponse: " .. xmlResponse)
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
 
@@ -211,9 +200,6 @@ end
 
 function ZenphotoAPI.createAlbum( propertyTable, params )
 	log:info('Create a new album: ' .. params.name)
-
---	ZenphotoAPI.initPublishServiceID(propertyTable)
-
 	local paramMap = initRequestParams()
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
@@ -228,10 +214,7 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.editAlbum( propertyTable, params )
-	log:info('Edit album: ')
-
---	ZenphotoAPI.initPublishServiceID(propertyTable)
-
+	log:info('Edit Zenphoto album: ')
 	local paramMap = initRequestParams()
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
@@ -260,19 +243,6 @@ function ZenphotoAPI.initPublishServiceID( propertyTable )
 	return publishServiceID
 	
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function ZenphotoAPI.getTableFromXML(xmlResponse, formatForUI, allowSingleEntry)
 
@@ -404,9 +374,6 @@ function ZenphotoAPI.getListFromXML(xmlResponse)
 	return decode64(resultTable)
 end
 
-
-
-
 function ZenphotoAPI.getSingleValueXML(xmlResponse)
 
 	local responseDocument = LrXml.parseXml( xmlResponse, true )
@@ -521,7 +488,7 @@ function ZenphotoAPI.sendXMLRequest( methodName, params )
 	table.insert( headers, { field = 'Content-length', value = tostring( #xmlString ) } )
 
 	
-	zenphotoHost = prefs.host
+	zenphotoHost = prefs.instanceTable[prefs.instanceID].host
 	zenphotoURL = 'http://'..zenphotoHost..'/'..prefs.webpath..'/xmlrpc.php'
 
 	-- send request
@@ -539,7 +506,7 @@ end
 
 function ZenphotoAPI.uploadFile( filePath )
 
-	local zenphotoHost = prefs.host
+	local zenphotoHost = prefs.instanceTable[prefs.instanceID].host
 	local zenphotoURL = 'http://'..zenphotoHost..'/'..prefs.webpath..'/xmlrpc_upload.php'
 
 	log:info( 'Uploading photo', zenphotoURL )

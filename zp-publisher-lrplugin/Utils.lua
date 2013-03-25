@@ -40,6 +40,10 @@ Utils = {}
 	--
 	--	split string
 	--
+	--	
+	
+	
+
 	--
 	function split(str, pat)
 	   local t = {}  -- NOTE: use {n = 0} in Lua-5.0
@@ -59,7 +63,15 @@ Utils = {}
 	   end
 	   return t
 	end
-
+	--
+	--
+	--	strip string
+	--
+	function strip(str)
+	gsub("[A-Za-z0-9-]+[ 0-9A-Za-z#$%=@!{},`~&*()'<>?.:;_|^/+\t\r\n\[\]-]*")
+	--[a-zA-Z0-9\t\n ./<>?;:"'`!@#$%^&*()[]{}_+=|\\-]
+	return str
+	end
 
 	function table.join(t1, t2)
 --		for k,v in ipairs(t2) do table.insert(t1, v) end return t1
@@ -261,16 +273,12 @@ end
 	function tdump(t)
 	  local function dmp(t, l, k)
 		if type(t) == "table" then
-		if prefs.logLevel == 'verbose' then
 		  log:debug('tdump:',string.format("%s%s:", string.rep(" ", l*2), tostring(k)))
-		end
 		  for k, v in pairs(t) do
 			dmp(v, l+1, k)
 		  end
 		else
-		if prefs.logLevel == 'verbose' then
 		  log:debug(string.format('tdump:', "%s%s:%s", string.rep(" ", l*2), tostring(k), tostring(t)))
-		end
 		end
 	  end
 	  
