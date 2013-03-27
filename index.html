@@ -50,6 +50,7 @@
 				<li><a href="#features">Features<br /><span>list of features</span></a></li>
 				<li><a href="#install">Installation<br /><span>install information</span></a></li>
 				<li><a href="#download">Download<br /><span>get latest version</span></a></li>
+				<li><a href="#faq">FAQ<br /><span>frequently ask questions</span></a></li>
 				<li><a href="#changelog">Change Log<br /><span>recent changes</span></a></li>
 
 			</ul>
@@ -180,6 +181,32 @@ Go to the Publish Service section of Lightroom and select the “Zenphoto Publis
    If you afraid problems then make use of the sync buttons from withing the “Sync Albums/Images collection. This works in any case!
     <p><strong>ATTENTION: </strong> never make an album part of itself or of an containing sub-album. </p></span>
         </section>
+</div>
+</div>
+</article>
+
+<article id="faq">
+	<div class="container">
+	
+<div class="sixteen columns titleset">
+<h1></h1>FAQ...</h1>
+
+<b>I have logged-in but cannot publish any photos</b>
+
+Please make sure that the zp-lightroom directory has write permissions. This is necessary for temporary files. If you cannot or wont make it writable then change the upload method to ‘XML data‘.
+
+If you now have still problems then check the owner and the permissions of the photos that you want publish.
+
+In other words: you must be the owner of a photo that you want publish to the server. This problem can happen when you want “overwrite” an already existing photo on the server which has a different owner or not sufficient permissions.
+
+I get the message ‘Unable to upload photo …’ See the point above.
+
+If you still have problems, then please try to change the “Upload method” to “XML data”.
+
+My filenames contain an apostrophe and I cannot publish any photos
+
+Please change the “Upload method” to “XML data”. Until now I couldn’t find any way to cast an apostrophe for the Multipart-POST, but “XML data” is working.
+	
 </div>
 </div>
 </article>
