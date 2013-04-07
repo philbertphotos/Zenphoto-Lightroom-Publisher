@@ -187,21 +187,31 @@ Go to the Publish Service section of Lightroom and select the “Zenphoto Publis
 
 <b>I have logged-in but cannot publish any photos</b>
 
-<p>Please make sure that the zp-lightroom directory has write permissions. This is necessary for temporary files. If you cannot or wont make it writable then change the upload method to ‘XML data‘.
+<p>Please make sure that the zp-lightroom directory has write permissions. This is necessary for temporary files. If you cannot or wont make it writable then change the upload method to ‘XML data‘.</p>
 
-If you now have still problems then check the owner and the permissions of the photos that you want publish.
+<p>If you now have still problems then check the owner and the permissions of the photos that you want publish.</p>
 
 In other words: you must be the owner of a photo that you want publish to the server. This problem can happen when you want “overwrite” an already existing photo on the server which has a different owner or not sufficient permissions.
 
-I get the message ‘Unable to upload photo …’ See the point above.
+I get the message ‘Unable to upload photo …’ See the point above.</br>
 
-If you still have problems, then please try to change the “Upload method” to “XML data”.
+If you still have problems, then please try to change the “Upload method” to “XML data”.</br>
 
-My filenames contain an apostrophe and I cannot publish any photos
+My filenames contain an apostrophe and I cannot publish any photos</br>
 
 Please change the “Upload method” to “XML data”. Until now I couldn’t find any way to cast an apostrophe for the Multipart-POST, but “XML data” is working.
 </p>	
 </div>
+<strong>“Server could not be connected”</strong> 
+<p>solution:</p>some users had problems with this error message. It appears due to incorrect server settings, especially when ZP is running in a sub-directory.
+
+ZenPhoto-URL – contains ONLY the the server name</br>
+webservice directory – contains the complete path from root</br>
+
+For example: when you have installed ZP on “www.testserver.com/zp” your “zp-lightroom” directory is copied under “www.testserver.com/zp/plgins/zp-lightroom”.
+
+ZenPhoto-URL – “www.testserver.com”</br>
+webservice directory – “/zp/plugins/zp-lightroom”
         </section>
 </div>
 </div>
