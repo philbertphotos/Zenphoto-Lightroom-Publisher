@@ -22,43 +22,11 @@ $server = new IXR_Server(array(
     'zenphoto.album.edit' 		=> 'changeAlbum',
     'zenphoto.image.delete' 	=> 'deleteImage',
     'zenphoto.image.upload' 	=> 'upload',
-    'zenphoto.image.uploadXML' 	=> 'uploadXML',
+	'zenphoto.image.uploadXML' 	=> 'uploadXML',
+	'zenphoto.get.comments'		=> 'getImageComments',
+	'zenphoto.get.ratings'		=> 'getImageRatings',
+	'zenphoto.add.comment'		=> 'addImageComments',
 	));
-
-
-/*******************************************************************************************************
- *
- *		MySQL Helper functions (read only!!!)
- *
- **/
-	function getAlbumForAlbumID($id) {
-		$row = query_single_row('SELECT folder FROM '.prefix("albums").' WHERE id='.$id.' LIMIT 1', true);
-
-		if (!$row['folder'])
-			return null;
-
-		$album = new Album(new Gallery(), $row['folder']);
-		makeAlbumCurrent($album);
-		return $album;
-	}
-
-	function getImageForImageID($id) {
-		$row = query_single_row('SELECT '.prefix("images").'.id, '.prefix("images").'.filename, '.prefix("albums").'.folder FROM
-								'.prefix("images").' LEFT JOIN '.prefix("albums").' ON '.prefix("images").'.albumId = '.prefix("albums").'.id
-								WHERE
-								'.prefix("images").'.id='.$id, true);
-
-		$album = new Album(new Gallery(),$row['folder']);
-		return new _Image($album, $row['filename']);
-	}
-
-	function getAlbumsFromDB($gallery, $parentid = null) {
-		if (!$parentid)
-			return query_full_array('SELECT folder FROM '.prefix('albums').' WHERE parentid is null ORDER BY id', true);
-		else
-			return query_full_array('SELECT folder FROM '.prefix('albums').' WHERE parentid = '.$parentid.' ORDER BY id', true);
-	}
-
 
 /*******************************************************************************************************
  *
@@ -68,7 +36,6 @@ $server = new IXR_Server(array(
 	function getFolderNode($foldername) {
 		return strrpos($foldername, '/') ? substr (strrchr ($foldername, "/"), 1) : $foldername;
 	}
-	
 	/**
 	 *	get all subalbums (if available)
 	 **/
@@ -76,17 +43,18 @@ $server = new IXR_Server(array(
 		$list = array();
 
 		$albumObj = new Album($gallery, $album);
-
-		if ($albumObj->isDynamic() || !$albumObj->getID())
-			return $list;
+		$albumID = $albumObj->getID();
+        $parentID = getItemByID("albums",$albumID);
 		
-	//	$subalbums = $albumObj->getAlbums(0);
-		$subalbums = getAlbumsFromDB($gallery, $albumObj->getID());
+		if ($albumObj->isDynamic() || !$albumID)
+			return $list;
+		$subalbums = $albumObj->getAlbums();
+			$subalbums = $parentID->getAlbums();
 
 		if (is_array($subalbums)) {
 			foreach ($subalbums as $subalbum) {
-				$list[] = $subalbum['folder'];
-				$list = array_merge($list, getSubAlbums($gallery, $subalbum['folder']));
+				$list[] = $subalbum;
+				$list = array_merge($list, getSubAlbums($gallery, $subalbum));
 			}
 		}
 		return $list;
@@ -109,7 +77,88 @@ $server = new IXR_Server(array(
 
 		return $args;
 	}
+/**
+* Returns the hash of the zenphoto password
+*
+* @param string $user
+* @param string $pass
+* @return string
+*/
+function passwordHash($user, $pass, $hash_type=NULL) {
+if (is_null($hash_type)) {
+$hash_type = getOption('strong_hash');
+}
+switch ($hash_type) {
+case 1:
+$hash = sha1($user.$pass.HASH_SEED);
+break;
+case 2:
+$hash = base64_encode(pbkdf2($pass,$user.HASH_SEED));
+break;
+default:
+$hash = md5($user.$pass.HASH_SEED);
+break;
+}
+if (DEBUG_LOGIN) {
+debugLog("passwordHash($user, $pass, $hash_type)[{HASH_SEED}]:$hash");
+}
+return $hash;
+}
 
+	/**
+* Returns an admin object from the $pat:$criteria
+* @param array $criteria [ match => criteria ]
+* @return Zenphoto_Administrator
+*/
+function getAnAdmin($criteria) {
+$selector = array();
+foreach ($criteria as $match=>$value) {
+if (is_numeric($value)) {
+$selector[] = $match.$value;
+} else {
+$selector[] = $match.db_quote($value);
+}
+}
+$sql = 'SELECT * FROM '.prefix('administrators').' WHERE '.implode(' AND ',$selector).' LIMIT 1';
+$admin = query_single_row($sql,false);
+if ($admin) {
+return newAdministrator($admin['user'], $admin['valid']);
+} else {
+return NULL;
+}
+}
+
+	/**
+* Instantiates and returns administrator object
+* @param $name
+* @param $valid
+* @return object
+*/
+function newAdministrator($name, $valid=1) {
+$user = new Zenphoto_Administrator($name, $valid);
+return $user;
+}
+
+function checkLogon($user, $pass) {
+$userobj = getAnAdmin(array('`user`=' => $user, '`valid`=' => 1));
+if ($userobj) {
+$hash = passwordHash($user, $pass, $userobj->get('passhash'));
+if ($hash != $userobj->getPass()) {
+$userobj = NULL;
+}
+}
+
+if (DEBUG_LOGIN) {
+if ($userobj) {
+$rights = sprintf('%X',$userobj->getRights());
+} else {
+$rights = false;
+}
+debugLog(sprintf('checkLogon(%1$s, %2$s)->%3$s',$user, $hash, $rights));
+}
+//return $userobj;
+	 	 debugLog("userObject1: ".$userobj);
+}
 
 /*******************************************************************************************************
  *
@@ -118,20 +167,29 @@ $server = new IXR_Server(array(
  **/
 
 /**
- *	first authorize
+ *	authorize user
  **/
  function authorize($args) {
 	global $_zp_authority;
 
 	$args = decode64($args);
-
 	if (!preg_match('#^1.4#', ($version = getVersion())))
 		return new IXR_Error(-2, 'Zenphoto version '.$version.' but v1.4.x required!');
 
 	$_zp_authority = new Zenphoto_Authority();
 
 	$hash = $_zp_authority->passwordHash($args['loginUsername'], $args['loginPassword']);
-	$userobj = $_zp_authority->getAnAdmin(array('`user`=' => $args['loginUsername'], '`pass`=' => $hash, '`valid`=' => 1));
+	$userobj = getAnAdmin(array('`user`=' => $args['loginUsername'], '`valid`=' => 1));
+/**	 	 debugLog("login hash: ".$hash);
+	 	 debugLog("userObject: ".$userobj);
+		 
+$hashcheck = getAnAdmin(array('`user`=' => $args['loginUsername'], '`valid`=' => 1));
+debugLog("check hash: ".$userobj->get('passhash'));
+$hash_type = getOption('strong_hash');
+debugLog("Hashtype: " .$hash_type); 
+debugLog("Hashcheck: " .$hashcheck);
+**/
+
 	if($userobj) {
 		return true;
 	} else {
@@ -139,20 +197,18 @@ $server = new IXR_Server(array(
 	}
 }
  
- 
 /**
  *
- *
+ *getalbum List
  **/
 function getAlbumList($args) {
-
+	debuglog ('function-getAlbumList');
 	if (is_object($login_state = authorize($args)))	return $login_state;
 
 	$args = decode64($args);
 
 	$gallery = new Gallery();
-	$albums = getAlbumsFromDB($gallery);
-	
+	$albums = $gallery->getAlbums();	
 	//
 	//	gather all names of the albums, including sub-albums
 	//
@@ -160,9 +216,9 @@ function getAlbumList($args) {
 
 	if (is_array($albums))
 		foreach ($albums as $album) {
-			$allalbums[] = $album['folder'];
+			$allalbums[] = $album;
 
-			foreach (getSubAlbums($gallery, $album['folder']) as $sub)
+			foreach (getSubAlbums($gallery, $album) as $sub)
 				$allalbums[] = $sub;
 		}
 
@@ -192,7 +248,7 @@ function getAlbumList($args) {
 			'parentFolder' => $album->getParent()->name,
 			 'description' => $album->getDesc(),
 				'location' => $album->getLocation(),
-				'password' => $album->getPassword(),
+				//'password' => $album->getPassword(),
 					'show' => $album->getShow(),
 			  'commentson' => $album->getCommentsAllowed()
 				));
@@ -213,7 +269,8 @@ function getAlbumImages($args) {
 
 	$args = decode64($args);
 
-	if (!($album = getAlbumForAlbumID($args['id'])) || !$args['id'])
+	//if (!($album = getAlbumForAlbumID($args['id'])) || !$args['id'])
+	if (!($album = getItemByID("albums",$args['Id']) || !$args['id']))
 		return new IXR_Error(-1, 'No folder with database ID '.$args['id'].' found!');
 
 	$list = array();
@@ -227,7 +284,91 @@ function getAlbumImages($args) {
 	return $list;
 }
  
- 
+ /**
+ *
+ *	retrive comments from image.
+ *
+ **/
+function getImageComments($args) {
+	global $_zp_current_image;
+	//$v = var_export($args, true);
+	//debuglog ('getImageComments');	
+	//debuglog ($v);
+	if (is_object($login_state = authorize($args)))	return $login_state;
+	
+	$args = decode64($args);
+	$imageobject = getItemByID("images",$args['Id']);
+	if ($imageobject->filename)
+	$comments = $imageobject->getComments();
+	else
+		return new IXR_Error(-1, 'Image not found on server '.$obj['filename']);
+		
+	for ($i = 0; $i < count($comments); ++$i) {
+$x = $i+1;
+	$commentList[] = entitysave(array(
+		'commentData' => $comments[$i]["comment"],
+		'commentId' => $comments[$i]["id"],
+		'commentDate' => strtotime(str_replace(".000000", "",$comments[$i]["date"])),
+		'commentUsername' => $comments[$i]["email"],
+		'commentRealname' => $comments[$i]["name"],
+		'commentUrl' => $args["url"]."#zp_comment_id_".$x,
+		
+		));
+    }
+	return $commentList;
+}
+ /**
+ *
+ *	add comments to image.
+ *
+ **/
+function addImageComments($args) {
+	global $_zp_current_image;
+	
+	$v = var_export($args, true);
+	debuglog ('addImageComments');	
+	debuglog ($v);
+
+	if (is_object($login_state = authorize($args)))	return $login_state;
+	
+	$args = decode64($args);
+	$imageobject = getItemByID("images",$args['Id']);	
+	$username = $args['loginUsername'];
+	$commentText = $args['commentText'];
+	if ($imageobject->filename)	
+	
+$postcomment = $imageobject->addComment($username, 'jj@jj.com', '', $commentText, '','' , '', '', '', '');
+//debugLog('addcomment bool: ' . $postcomment);
+//object addComment( string $name, string $email, string $website, string $comment, string $code, string $code_ok, string $ip, bool $private, bool $anon  )
+
+	else
+		return new IXR_Error(-1, 'Image not found on server '.$obj['filename']);
+	
+	return $postcomment;
+}
+ /**
+ *
+ *	get ratings from image.
+ *
+ **/
+function getImageRatings($args) {
+	global $_zp_current_image;
+	
+	$v = var_export($args, true);
+	debuglog ('getImageRatings');	
+	debuglog ($v);
+	
+	if (is_object($login_state = authorize($args)))	return $login_state;
+	$args = decode64($args);
+	$imageobject = getItemByID("images",$args['Id']);	
+	
+	if (!$imageobject)
+	$rating = getRating($imageobject);
+	else
+		return new IXR_Error(-1, 'Image not found on server '.$obj['filename']);
+
+		return $rating;
+}
 /**
  *
  *	upload a new image to the server
@@ -239,7 +380,7 @@ function uploadXML($args) {
 
 	$args = decode64($args);
 
-	if (!($album = getAlbumForAlbumID($args['id'])))
+	if (!($album = getItemByID("albums",$args['Id'])))
 		return new IXR_Error(-1, 'No folder with database ID '.$args['id'].' found!');
 
 			
@@ -276,7 +417,8 @@ function upload($args) {
 
 	$args = decode64($args);
 
-	if (!($album = getAlbumForAlbumID($args['id'])))
+	//if (!($album = getAlbumForAlbumID($args['id'])))
+	if (!($album = getItemByID("albums",$args['Id'])))
 		return new IXR_Error(-1, 'No folder with database ID '.$args['id'].' found!');
 
 	$filepath = getAlbumFolder().($args['parentFolder'] ? $args['parentFolder'].'/' : '').$args['folder'];
@@ -315,30 +457,24 @@ function upload($args) {
 
 /**
  *
- *
- *
+ *Delete Image
  *
  **/
 function deleteImage($args) {
 	global $_zp_current_album, $_zp_current_image;
 	
 	if (is_object($login_state = authorize($args)))	return $login_state;
-
 	$args = decode64($args);
-
-	$img = getImageForImageID($args['id']);
-
-	if ($img->filename)
-		$img->remove();
+		$imageobject = getItemByID("images",$args['Id']);
+	if ($imageobject->filename)
+		$imageobject->remove();
 	else
 		return new IXR_Error(-1, 'Image not found on server '.$obj['filename']);
 }
 
-
 /**
  *
- *
- *
+ *Delete Album
  *
  **/
 function deleteAlbum($args) {
@@ -346,7 +482,7 @@ function deleteAlbum($args) {
 	if (is_object($login_state = authorize($args)))	return $login_state;
 	
 	$args = decode64($args);
-	$album = getAlbumForAlbumID($args['id']);
+	$album = getItemByID("albums",$args['Id']);
 	if ($album)
 	$album->remove();
 	else
@@ -358,8 +494,7 @@ function deleteAlbum($args) {
 
 /**
  *
- *
- *
+ *Create Image
  *
  **/
 function createAlbum($args) {
@@ -398,40 +533,36 @@ function createAlbum($args) {
 
 
 /**
- *
- *
- *
- *
+ *Change Album
  **/
 function changeAlbum($args) {
-	global $_zp_current_album;
+		debuglog ('fuction-changeAlbum');
+	global $_zp_current_album, $_zp_authority;
 	
 	if (is_object($login_state = authorize($args)))	return $login_state;
 
 	$args = decode64($args);
-
-	if (!($album = getAlbumForAlbumID($args['id'])))
+	$albumobject = getItemByID("albums",$args['id']);
+	if (!($album = $albumobject))
 		return new IXR_Error(-1, 'No folder with database ID '.$args['id'].' found!');
-
-
+//$v = var_export($args, true);
+	//debuglog ($v);
 	//
 	//	change album values
 	//
-	foreach($args as $key=>$value)
-	global $_zp_authority;
 	$_zp_authority = new Zenphoto_Authority();
 
-	switch($key) {
-			case 'name':		$album->setTitle($value); break;
-			case 'description':	$album->setDesc(base64_decode($value)); break;
-		    case 'location':	$album->setLocation(base64_decode($value)); break;
-		    case 'password':	$album->setPassword($_zp_authority->passwordHash($value)); break;
-			case 'show':		$album->setShow($value); break;
-			case 'commentson':	$album->setCommentsAllowed($value); break;
-		}
-	$album->save();
-	
+$album->setTitle($args['name']);
+$album->setDesc(nl2br($args['description'])); 
+$album->setLocation($args['location']);
+//$album->setPassword($_zp_authority->passwordHash($args['password']));
+$album->setShow($args['show']);
+$album->setCommentsAllowed($args['commentson']);
 
+	//$v = var_export($key, true);
+	debuglog ('changealbum-key');		
+	//debuglog ($v);
+	$album->save();
 	//
 	//	rename action
 	//
@@ -455,11 +586,10 @@ function changeAlbum($args) {
 		'parentFolder' => ($parent ? $parent->name : null),
 		 'description' => $album->getDesc(),
 		    'location' => $album->getLocation(),
-			'password' => $album->getPassword(),
+			//'password' => $album->getPassword(),
 				'show' => $album->getShow(),
 		  'commentson' => $album->getCommentsAllowed()
-	));
-	
+		  //'ratingsson' => $album->getRatingAllowed()
+	));	
 }
-
 ?>
