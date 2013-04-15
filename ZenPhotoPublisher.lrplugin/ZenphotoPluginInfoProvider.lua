@@ -2,12 +2,7 @@
 
 ZenphotoPluginInfoProvider.lua
 Export service provider description for Lightroom Zenphoto uploader
-
 ------------------------------------------------------------------------------]]
-
-local LrLogger = import 'LrLogger'
-local log = LrLogger( 'ZenphotoLog' )
--- Zenphoto plugin
 require 'ZenphotoDialogSections'
 --require "LRLib_SelfUpdate"
 local startD = {}

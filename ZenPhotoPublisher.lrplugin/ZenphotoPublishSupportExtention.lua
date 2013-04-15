@@ -19,12 +19,6 @@ local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local LrView	= import 'LrView'
 local bind 		= LrView.bind
 
-require 'ZenphotoAPI'
-
-    -- Logger
-local LrLogger = import 'LrLogger'
-local log = LrLogger( 'ZenphotoLog' )
-
 --============================================================================--
 
 publishServiceExtention = {}
@@ -32,11 +26,11 @@ publishServiceExtention = {}
 --------------------------------------------------------------------------------
 
 function publishServiceExtention.getImages( publishedCollection, id, publishService, context)
-	log:info('reading images from server...')
+	log:info('getImages')
 	
     local progressScope = LrDialogs.showModalProgressDialog({
       title = 'Syncing image data from server',
-      caption = 'load image log:info from server for album: ' .. publishedCollection:getName(),
+      caption = 'loading images ........... ' .. publishedCollection:getName(),
       cannotCancel = false,
       functionContext = context,
     })
@@ -44,7 +38,6 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 	local publishService = publishService or publishedCollection:getService()
 	local missing = {}
 	
-
 	catalog = publishedCollection.catalog
 	catalog:withWriteAccessDo('empty album', function()
 		publishedCollection:removeAllPhotos()
@@ -53,6 +46,7 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 	local images, err = ZenphotoAPI.getAlbumImages(id)
 
 	if err then
+		log:fatal('Database error - AlbumID: '..id)
 		LrDialogs.message('Database error - AlbumID '..id..' does not exist', 'You attempt to access to a non existing database entry! Please re-sync your album and try again!', 'warn')
 		LrErrors.throwCanceled()
 	end
@@ -73,7 +67,13 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 					value = imagename..'.',
 			},
 		}
-
+--[[photos = catalog:findPhotos {
+			searchDesc = {
+					criteria = 'captureTime',
+					operation = 'any',
+					value = imagename..'.',
+			},
+		}--]]
 	
 		local photo = nil
 --		if photos and #photos > 1 then
@@ -91,12 +91,11 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 			table.insert(prefs.instanceTable[instanceID].missing, imagename)
 		end
 	end
-
 	log:info('reading images from server...done')
 	LrTasks.yield()
 	progressScope:done()
 
-	return missing
+	return prefs.instanceTable[instanceID].missing
 end
 
 --
@@ -105,7 +104,7 @@ end
 --
 --
 function publishServiceExtention.selectPhoto(photos, catalog)
-
+log:info('selectPhoto')
 	local photolist = {}
 	for i, photo in pairs ( photos ) do
 		local entry = { { title = photo:getFormattedMetadata('fileName'), value = photo} }
@@ -114,8 +113,6 @@ function publishServiceExtention.selectPhoto(photos, catalog)
 		
 	end
 
-
-	
 	LrFunctionContext.callWithContext( 'selectPhotoDialog', function( context )
 		local propertyTable = LrBinding.makePropertyTable(context)
 		propertyTable.photolist = photolist
@@ -180,9 +177,8 @@ function publishServiceExtention.findRoot(collection)
 	if root then return root else return collection end
 end	 
 
-
 function publishServiceExtention.getDefaultCollection(collection)
-
+log:trace('getDefaultCollection')
 	local rootCollectionSet = publishServiceExtention.findRoot(collection)
 
 	if rootCollectionSet then
@@ -195,7 +191,7 @@ function publishServiceExtention.getDefaultCollection(collection)
 end
 
 function publishServiceExtention.getAllPublishedPhotos(collection, arrayOfPublishedPhotos)
-
+log:trace('getAllPublishedPhotos')
 	if not arrayOfPublishedPhotos then arrayOfPublishedPhotos = {} end
 
 	if collection:type() == 'LrPublishedCollectionSet' then
@@ -206,7 +202,7 @@ function publishServiceExtention.getAllPublishedPhotos(collection, arrayOfPublis
 
 	if collection:type() == 'LrPublishedCollection' then
 		for j, publishedPhoto in pairs (collection:getPublishedPhotos()) do
-			log:debug(publishedPhoto)
+			log:trace("getAllPublishedPhotos:"..publishedPhoto)
 			table.insert(arrayOfPublishedPhotos, publishedPhoto)
 		end
 	end
@@ -214,8 +210,8 @@ function publishServiceExtention.getAllPublishedPhotos(collection, arrayOfPublis
 	return arrayOfPublishedPhotos
 end
 
-
 function publishServiceExtention.removeAllPhotos( collection )
+log:trace('removeAllPhotos')
 	if collection:type() == 'LrPublishedCollectionSet' then
 		for j, childCollection in pairs (collection:getChildCollections()) do
 			publishServiceExtention.removeAllPhotos(childCollection)
@@ -227,8 +223,8 @@ function publishServiceExtention.removeAllPhotos( collection )
 	end
 end
 
-
 function publishServiceExtention.collectionNameExists( publishService, name )
+log:trace('collectionNameExists')
 	for j, childCollection in pairs (publishService:getChildCollections()) do
 		if LrStringUtils.lower(childCollection:getName()) == LrStringUtils.lower(name) then
 			return true

@@ -1,11 +1,9 @@
---[[-----------------------------+-----------------------------------------------
+--[[----------------------------------------------------------------------------
 
 ZenphotoUser.lua
 Zenphoto user account management
 
 ------------------------------------------------------------------------------]]
-
-	-- Lightroom SDK
 local LrBinding 		= import 'LrBinding'
 local LrDialogs 		= import 'LrDialogs'
 local LrView 			= import 'LrView'
@@ -15,9 +13,7 @@ local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local bind 				= LrView.bind
 local share 			= LrView.share
 
-    -- Logger
-local LrLogger = import 'LrLogger'
-local log = LrLogger( 'ZenphotoLog' )
+local util              = require 'Utils'
 
 --============================================================================--
 
@@ -28,7 +24,7 @@ ZenphotoUser = {}
 local function storedCredentialsAreValid( propertyTable )
 			local username = prefs.instanceTable[instanceID].username
 			local password = prefs.instanceTable[instanceID].password	
-	local serviceIsRunning = prefs.instanceTable.serviceIsRunning
+	local serviceIsRunning = prefs.instanceTable[instanceID].serviceIsRunning
 	log:debug("storedCredentialsAreValid")
 	return username and password and serviceIsRunning
 				
@@ -66,15 +62,16 @@ function ZenphotoUser.login( propertyTable )
 	
 	prefs.instanceTable[instanceID].token = 'OK'
 	propertyTable.token = prefs.instanceTable[instanceID].token
+	
+	prefs.instanceTable[instanceID].instance_ID = publishServiceID
+	propertyTable.instance_ID = prefs.instanceTable[instanceID].instance_ID
 
 end
 
 --------------------------------------------------------------------------------
 
 function ZenphotoUser.getLoginAndPassword( propertyTable )
-if prefs.logLevel ~= not 'none' then
-log:trace("'ZenphotoUser.getLoginAndPassword'")
-end
+	log:trace("ZenphotoUser.getLoginAndPassword")
 	local login, password, message = (prefs.instanceTable[instanceID].username), (prefs.instanceTable[instanceID].password)
 	
 	local isAuthorized = false
@@ -86,7 +83,7 @@ end
 
 		if showMessage then 
 			message = LOC "$$$/zenphoto/LoginDialog/Invalid=The user name or password is not valid."
-			log:debug ("The user name or password is not valid")
+			log:fatal("The user name or password is not valid")
 		else
 			message = nil
 		end
@@ -103,15 +100,12 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoUser.initLogin( propertyTable )
-if prefs.logLevel ~= not 'none' then
 log:trace("ZenphotoUser.initLogin")
-end
-	if not propertyTable.LR_publishService then return end
+	if not propertyTable.LR_publishService then return end	
 	-- Observe changes to prefs and update status message accordingly.
 	local function updateStatus()
-	
 		if storedCredentialsAreValid( propertyTable ) then
-			local displayUserName = prefs.instanceTable[prefs.instanceID].username
+			local displayUserName = prefs.instanceTable[publishServiceID].username
 			
 		if isBlank(prefs.instanceTable[instanceID].token) then 
 			propertyTable.accountStatus = LOC( "$$$/Zenphoto/AccountStatus/LoggedIn=Not Logged in")
@@ -212,6 +206,7 @@ log:trace("ZenphotoUser.showLoginDialog")
 			prefs.instanceTable[instanceID].username = properties.login
 			prefs.instanceTable[instanceID].password = properties.password	
 		else
+		log:fatal('login error')
 			LrErrors.throwCanceled()
 		end
 	end )

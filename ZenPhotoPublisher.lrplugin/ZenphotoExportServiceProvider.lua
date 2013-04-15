@@ -4,8 +4,6 @@ ZenphotoExportServiceProvider.lua
 Export service provider description for Lightroom Zenphoto uploader
 
 ------------------------------------------------------------------------------]]
-
-	-- Lightroom SDK
 local LrBinding         = import 'LrBinding'
 local LrView            = import 'LrView'
 local LrApplication     = import 'LrApplication'
@@ -27,9 +25,6 @@ local util              = require 'Utils'
 
 local bind = LrView.bind
 local share = LrView.share
-    -- Logger
-local LrLogger = import 'LrLogger'
-local log = LrLogger( 'ZenphotoLog' )
 
 --============================================================================--
 
@@ -59,18 +54,17 @@ exportServiceProvider.exportPresetFields = {
 		{ key = 'username', default = "yourloginname" },
 		{ key = 'password', default = "password" },
 		{ key = 'host', default = "wwww.yourzenphotoserver.com" },
+		{ key = 'instance_ID', default = 00000 },
 		{ key = 'accountStatus', default = "Please fill out the available sections and save to enable this service" },
 		{ key = 'loginButtonTitle', default = "DISABLED" },
+		{ key = 'instanceKey', default=(import 'LrDate').currentTime()},
 		{ key = 'uploadMethod', default = "POST" },
 		{ key = 'token', default = "" },
 	}
 --------------------------------------------------------------------------------
 
 function exportServiceProvider.startDialog( propertyTable )
-if prefs.logLevel ~= not 'none' then
 log:trace("exportServiceProvider.startDialog")
-end
-
 	if not propertyTable.LR_publishService then	return end
 	local publishService = propertyTable.LR_publishService
 	publishServiceID = publishService.localIdentifier
@@ -78,6 +72,7 @@ end
 	prefs.instanceID = publishServiceID	
 	
 	instanceID = tonumber(trim(prefs.instanceID))
+	propertyTable.instance_ID = publishServiceID
 	
 	log:info("publishServiceID:" ..publishServiceID)
 
@@ -100,6 +95,7 @@ if prefs.instanceTable[instanceID] then
 				table.insert(prefs.instanceTable,instanceID,
 					{
 					host = propertyTable.host,
+					instance_ID = propertyTable.instance_ID,
 					webpath = propertyTable.webpath,
 					uploadMethod = propertyTable.uploadMethod,
 					username = "yourname",
@@ -109,16 +105,16 @@ if prefs.instanceTable[instanceID] then
 				)				
 			end
 			
-	prefs.instanceTable.serviceIsRunning = publishService
-log:info("prefs.serviceIsRunning")
-	if prefs.instanceTable.serviceIsRunning then
+	prefs.instanceTable[instanceID].serviceIsRunning = publishService
+log:info("prefs.serviceIsRunning ".. table_show(publishService))
+	if prefs.instanceTable[instanceID].serviceIsRunning then
 		propertyTable.serviceIsRunning = true
 		propertyTable.publishServiceID = publishServiceID
 	else
 		propertyTable.serviceIsRunning = false
 		propertyTable.publishServiceID = nil
 	end
-
+	
 	-- Make sure we're logged in.
 	require 'ZenphotoUser'
 	ZenphotoUser.initLogin( propertyTable )
@@ -134,7 +130,7 @@ log:info("prefs.serviceIsRunning")
 	prefs.instanceTable[instanceID].uploadMethod = propertyTable.uploadMethod
 	propertyTable:addObserver( 'uploadMethod', function() 
 		prefs.instanceTable[instanceID].uploadMethod = propertyTable.uploadMethod
-	end)
+	end)	
 	
 	propertyTable.webpath = '/plugins/zp-lightroom/' --prefs.webpath or '/plugins/zp-lightroom/'
 	prefs.webpath = '/plugins/zp-lightroom/' --propertyTable.webpath
@@ -145,22 +141,16 @@ log:info("prefs.serviceIsRunning")
 	
 	if not prefs.instanceTable[instanceID].missing then
 		prefs.instanceTable[instanceID].missing = {}
-	end
-	
-		if prefs.logLevel == 'verbose' then
-		  	tdump(prefs)
-		end
+	end	
+log:debug(table_show(prefs))
 end
-
 
 --------------------------------------------------------------------------------
 function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
+log:info('--START LOG--')
 	-- set global publishServiceID to identify the current prefs
 	--publishServiceID = localIdentifier
 	--prefs.publishServiceID = trim(publishServiceID)
-if prefs.logLevel ~= not 'none' then
-log:trace("exportServiceProvider.sectionsForTopOfDialog")
-end
     return {
 			{
 			title = "Login to ZenPhoto",
@@ -285,10 +275,7 @@ end
 	}
 end
 
-
 --------------------------------------------------------------------------------
-
-
 function exportServiceProvider.sync( fullsync, publishService, context )
 
 	local catalog = import 'LrApplication'.activeCatalog()
@@ -355,19 +342,16 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 				LrFunctionContext.callWithContext('sync Images', function(context)
 					result = publishServiceExtention.getImages( pubCollection, remoteId, nil, context)
 					prefs.instanceTable[instanceID].missing[remoteId] = result
-					missing = Utils.joinTables(missing, result)
+					prefs.instanceTable[instanceID].missing = Utils.joinTables(missing, result)
 				end)
 			end
 		end
 		log:info('finish syncing album and images')
 		
-		if #missing > 0 then Utils.showMissingFilesDialog(missing) end
-		
+		if #prefs.instanceTable[instanceID].missing > 0 then Utils.showMissingFilesDialog(missing) end
+		log:trace('missing greater than 0')
 	end
 end
-
-
-
 --------------------------------------------------------------------------------
 --
 --
@@ -402,6 +386,7 @@ function exportServiceProvider.deleteMissingPhotos(arrayOfPhotoNames)
 
 				if errors ~= '' then
 					LrDialogs.message( 'Unable to delete image with name: ' .. photoName, errors, 'critical' )
+					log:fatal('Unable to delete image with name: ' .. photoName, errors, 'critical')
 				end
 			end
 			
@@ -493,6 +478,7 @@ log:info ('write information to custom metadata')
 				else
 					-- upload was not successful and returned an error
 					LrDialogs.message( 'Unable to upload image ' .. photoname, errors, 'critical' )
+					log:fatal( 'Unable to upload image ' .. photoname, errors, 'critical' )
 				end
 				-- Adjust progesss scope
 				progressScope:setPortionComplete(i, nPhotos)

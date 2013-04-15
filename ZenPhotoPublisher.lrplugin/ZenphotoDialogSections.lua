@@ -15,9 +15,6 @@ local LrTasks			= import "LrTasks"
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local bind 				= LrView.bind
 
-    -- Logger
-local log = LrLogger( 'ZenphotoLog' )
-
 require 'ZenphotoUser'
 
 --============================================================================--
@@ -28,34 +25,31 @@ function updateLogLevelStatus( propertyTable )
 	--log:trace ("Calling updateLogLevelStatus( propertyTable )")
 	if propertyTable.logLevel == 'none' then
 		log:disable( )
-		propertyTable.logSynopsis = "No Log File"
+		propertyTable.logSynopsis = "Log File - none"
 	elseif propertyTable.logLevel == 'errors' then
-		log:enable( { ['error'] = 'logfile' ; ['fatal'] = 'logfile'} )
+	
+		log:enable( { ['error'] = 'logfile' ; ['warn'] = 'logfile' ;['fatal'] = 'logfile'} )
 		propertyTable.logSynopsis = "Log File - Errors Only"
+		
 	elseif propertyTable.logLevel == 'trace' then
-		log:enable( { ['error'] = 'logfile' ; ['debug'] = 'logfile' ; ['fatal'] = 'logfile' ; ['warn'] = 'logfile' ; ['info'] = 'logfile' } )
+		log:enable( { ['error'] = 'logfile' ; ['trace'] = 'logfile' ; ['info'] = 'logfile' } )
 		propertyTable.logSynopsis = "Log File - Trace"
-		elseif propertyTable.logLevel == 'verbose' then
-		log:enable( 'logfile' )
-		propertyTable.logSynopsis = "Log File - Verbose"
+		
+		elseif propertyTable.logLevel == 'debug' then
+		log:enable( {['trace'] = 'logfile' ; ['debug'] = 'logfile' ; ['fatal'] = 'logfile' ; ['warn'] = 'logfile' ; ['info'] = 'logfile' } )
+		propertyTable.logSynopsis = "Log File - Debug"
 	end
 end
 
 
 function ZenphotoDialogSections.startDialog( propertyTable )
-log:info('-------------------------------------')
-log:info('START LOG TIMESTAMP')
-log:info('-------------------------------------')
-	
-if prefs.logLevel ~= not 'none' then
 	log:info('ZenphotoDialogSections.startDialog')
-	end
 	-- initialize the log level
 	if propertyTable.logLevel == nil then
 		if prefs.logLevel ~= nil and prefs.logLevel ~= "" then
 			propertyTable.logLevel = prefs.logLevel
 		else
-			propertyTable.logLevel = 'trace'
+			propertyTable.logLevel = 'none'
 		end
 	end
 	
@@ -70,22 +64,17 @@ end
 -------------------------------------------------------------------------------
 
 function ZenphotoDialogSections.endDialog( propertyTable )
-	if prefs.logLevel ~= not 'none' then
-	log:trace("Calling ZenphotoDialogSections.endDialog")
-	end
-	-- save the log level into the preferences
 	prefs.logLevel = propertyTable.logLevel
-
+	log:trace("Calling ZenphotoDialogSections.endDialog")
+	-- save the log level into the preferences
 end
 
 function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
-	if prefs.logLevel ~= not 'none' then
 	log:trace("Calling ZenphotoDialogSections.sectionsForTopOfDialog")
-end
 	-- Initializations
 
 	if propertyTable.logLevel == nil then
-		propertyTable.logLevel = 'trace'
+		propertyTable.logLevel = 'none'
 	end
 	if propertyTable.logSynopsis == nil then
 		propertyTable.logSynopsis = ''
@@ -93,7 +82,7 @@ end
 	
 	local activeCatalog = LrApplication.activeCatalog()
     local info = require 'Info.lua'
-    local versionString = '(' .. (info.VERSION.major or '0') .. '.' .. (info.VERSION.minor or '0')  .. '.' .. (info.VERSION.revision or '0') .. ')'
+    local versionString = '(' .. (info.VERSION.major or '0') .. '.' .. (info.VERSION.minor or '0')  .. '.' .. (info.VERSION.revision or '0') .. '.' .. (info.VERSION.build or '0') .. ')'
 	return {
 
 		{
@@ -223,10 +212,10 @@ f:popup_menu {
 					fill_horizontal = 1,
 					width = 120,
 					items = {
-						{ title = "No Log File", value = 'none' },
+						{ title = "Log File - None", value = 'none' },
 						{ title = "Log File - Errors", value = 'errors' },
 						{ title = "Log File - Tracing", value = 'trace' },
-						{ title = "Log File - Debug", value = 'verbose' },
+						{ title = "Log File - Debug", value = 'debug' },
 					},
 					value = bind { key = 'logLevel', object = propertyTable }
 				}		

@@ -6,11 +6,8 @@ some utilities and helper functions
 ------------------------------------------------------------------------------]]
 
 local LrDialogs 		= import 'LrDialogs'
-local LrLogger          = import 'LrLogger'
+local LrStringUtils		= import 'LrStringUtils'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
-
-    -- Logger
-local log = LrLogger( 'ZenphotoLog' )
 
 Utils = {}
 
@@ -34,16 +31,25 @@ Utils = {}
 			return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
 		end
 	end
-
-
+	--
+	--
+	--	XML fix - remove leading and tailing spaces
+	--
+	--
+function xmlfix(str, x)
+if (str ~= nil) then
+if string.find(str, '</'..x..'>')  then
+return str
+else
+return string.gsub(str, '</'..x, '</'..x..'>')
+end
+end
+end
 	--
 	--
 	--	split string
 	--
 	--	
-	
-	
-
 	--
 	function split(str, pat)
 	   local t = {}  -- NOTE: use {n = 0} in Lua-5.0
@@ -63,6 +69,70 @@ Utils = {}
 	   end
 	   return t
 	end
+	--
+	--
+	--	encode64 decode64 strings
+	--
+	--	
+function decode64(value)
+
+	if type(value) == 'table' then
+		for k,v in pairs(value) do
+			if type(v) == 'table' then
+				value[k] = decode64(v)
+			else
+				value[k] = LrStringUtils.decodeBase64(v)
+			end
+		end
+	else
+		value = LrStringUtils.decodeBase64(value)
+	end
+	
+	return value
+end
+
+function encode64(value)
+
+	if type(value) == 'table' then
+		for k,v in pairs(value) do
+			if type(v) == 'table' then
+				value[k] = encode64(v)
+			else
+				if k == 'paramValue' then
+					value[k] = LrStringUtils.encodeBase64(v)
+				end
+			end
+		end
+	else
+		value = LrStringUtils.encodeBase64(value)
+	end
+	
+	return value
+end	
+	--
+	--
+	--	random string
+	--
+	--	
+math.randomseed(os.time())
+ pass = {}
+ function generate(s, l) -- args: smallest and largest possible password lengths, inclusive
+        size = math.random(s,l) -- random password length
+ 
+        for z = 1,size do
+ 
+                case = math.random(1,2) -- randomly choose case (caps or lower)
+                a = math.random(1,#char) -- randomly choose a character from the "char" array
+                if case == 1 then
+                        x=string.upper(char[a]) -- uppercase if case = 1
+                elseif case == 2 then
+                        x=string.lower(char[a]) -- lowercase if case = 2
+                end
+        table.insert(pass, x) -- add new index into array.
+        end
+        return(table.concat(pass)) -- concatenate all indicies of the "pass" array, then print out concatenation.
+end
+ 
 	--
 	--
 	--	strip string
@@ -147,8 +217,6 @@ Utils = {}
 
 		table.insert(t,v)
 	end	
-
-	
 	
 	--
 	--
@@ -179,8 +247,16 @@ Utils = {}
 		return split(Utils.getFilenameNoExt(value),' ')
 	end
 	
+    --
+	--
+	--	getFiledate
+	--		remove file extentions from a string and return a table of results
+	-- 
+	--
+	function Utils.getFiledate(value)
+		return split(Utils.getFilenameNoExt(value),' ')
+	end
 
-	
 	--
 	--
 	--	Show Missing files dialog
@@ -233,8 +309,6 @@ Utils = {}
 		end
 		
 	end
-
-
 	
 	-- 
 	-- 
@@ -265,34 +339,106 @@ Utils = {}
 
 function isBlank(x)
   return not not tostring(x):find("^%s*$")
+end	
+	--
+	--	print table dump
+	--
+	
+function table_show (tt, indent, done)
+  done = done or {}
+  indent = indent or 0
+  if type(tt) == "table" then
+    local sb = ''
+    for key, value in pairs (tt) do
+      sb = sb .. (string.rep (" ", indent)) -- indent it
+      if type (value) == "table" and not done [value] then
+        done [value] = true
+        sb = sb .. ( "{\n");
+        sb = sb .. (table_show (value, indent + 2, done))
+        sb = sb .. (string.rep (" ", indent)) -- indent it
+        sb = sb .. ("}\n");
+      elseif "number" == type(key) then
+         sb = sb .. (string.format("\"%s\"\n", tostring(value)))
+      else
+         sb = sb .. (string.format("%s = \"%s\"\n", tostring (key), tostring(value)))
+       end
+    end
+    return(sb)
+  else
+    return tostring(tt .. "\n")
+  end
 end
 
-	--
-	--	table dump
-	--
-	function tdump(t)
-	  local function dmp(t, l, k)
-		if type(t) == "table" then
-		  log:debug('tdump:',string.format("%s%s:", string.rep(" ", l*2), tostring(k)))
-		  for k, v in pairs(t) do
-			dmp(v, l+1, k)
-		  end
-		else
-		  log:debug(string.format('tdump:', "%s%s:%s", string.rep(" ", l*2), tostring(k), tostring(t)))
-		end
-	  end
-	  
-	  dmp(t, 1, "root")
-	end
+function table_show(t, name, indent)
+   local cart     -- a container
+   local autoref  -- for self references
 
+   -- returns true if the table is empty
+   local function isemptytable(t) return next(t) == nil end
 
-	
-	function table_keys(t)
-	  local ks = {}
-	  for k in pairs(t) do ks[#ks+1] = k end
-	  return ks
-	end
-	
+   local function basicSerialize (o)
+      local so = tostring(o)
+      if type(o) == "function" then
+         local info = debug.getinfo(o, "S")
+         -- info.name is nil because o is not a calling level
+         if info.what == "C" then
+            return string.format("%q", so .. ", C function")
+         else 
+            -- the information is defined through lines
+            return string.format("%q", so .. ", defined in (" ..
+                info.linedefined .. "-" .. info.lastlinedefined ..
+                ")" .. info.source)
+         end
+      elseif type(o) == "number" or type(o) == "boolean" then
+         return so
+      else
+         return string.format("%q", so)
+      end
+   end
+
+   local function addtocart (value, name, indent, saved, field)
+      indent = indent or ""
+      saved = saved or {}
+      field = field or name
+
+      cart = cart .. indent .. field
+
+      if type(value) ~= "table" then
+         cart = cart .. " = " .. basicSerialize(value) .. ";\n"
+      else
+         if saved[value] then
+            cart = cart .. " = {}; -- " .. saved[value] 
+                        .. " (self reference)\n"
+            autoref = autoref ..  name .. " = " .. saved[value] .. ";\n"
+         else
+            saved[value] = name
+            --if tablecount(value) == 0 then
+            if isemptytable(value) then
+               cart = cart .. " = {};\n"
+            else
+               cart = cart .. " = {\n"
+               for k, v in pairs(value) do
+                  k = basicSerialize(k)
+                  local fname = string.format("%s[%s]", name, k)
+                  field = string.format("[%s]", k)
+                  -- three spaces between levels
+                  addtocart(v, fname, indent .. "   ", saved, field)
+               end
+               cart = cart .. indent .. "};\n"
+            end
+         end
+      end
+   end
+
+   name = name or "__unnamed__"
+   if type(t) ~= "table" then
+      return name .. " = " .. basicSerialize(t)
+   end
+   cart, autoref = "", ""
+   addtocart(t, name, indent)
+   return cart .. autoref
+end
+
 function CurrentTime()
    local F = [[%%a=%a
 %%A=%A 
@@ -317,26 +463,7 @@ function CurrentTime()
 ]]
    return os.date(F, os.time())
 end
-	
 
-	function pairsByKeys (t, f) 
-		local a = {} 
-		for n in pairs(t) do 
-			table.insert(a, n) 
-		end 
-		table.sort(a, f) 
-		local i = 0      -- iterator variable 
-		local iter = function ()   -- iterator function 
-			i = i + 1 
-			if a[i] == nil then 
-					return nil 
-			else 
-					return a[i], t[a[i]] 
-			end 
-		end 
-		return iter 
-	end 
-	
 function table.clone(t, nometa) 
    local u = {} 
     
@@ -537,10 +664,81 @@ local function TblToStr(Tbl, Seen)
  return Ret
 end
 
--- A replacement for tostring that prints tables in Lua- and
---[[ human-readable format:
-function tostring(Val)
- return type(Val) == "table"
-   and TblToStr(Val)
-   or _tostring(Val)
-end--]]
+--
+-- Strip UTF8 BOM
+--
+function string.ucharrange(s, i)
+	if type(s) ~= "string" or type(i) ~= "number" or i < 1 or i > s:len() then
+		error("string and valid number expected", 2)
+	end
+	local byte = s:byte(i)
+	if not byte then
+		return 0
+	elseif byte < 192 then
+		return 1
+	elseif byte < 224 then
+		return 2
+	elseif byte < 240 then
+		return 3
+	elseif byte < 248 then
+		return 4
+	elseif byte < 252 then
+		return 5
+	else
+		return 6
+	end
+end
+
+function string.uchars(s)
+	if type(s) ~= "string" then
+		error("string expected", 2)
+	end
+	local char_i, s_pos = 0, 1
+	local function itor()
+		if s_pos > s:len() then
+			return nil
+		end
+
+		local char_w = string.ucharrange(s, s_pos)
+		local cur_pos = s_pos
+		s_pos = s_pos + char_w
+		char_i = char_i + 1
+		return char_i, s:sub(cur_pos, cur_pos + char_w - 1)
+	end
+	return itor
+end
+
+function utf8trim(s)
+	--Unicode characters to table entries
+	local utf8_c = {}
+	for ci, char in string.uchars(s) do
+		table.insert(utf8_c, char)
+	end
+	--Erase prespace
+	local prespace = 0
+	for ci=1, #utf8_c do
+		if utf8_c[ci] ~= " " and utf8_c[ci] ~= "\t" then
+			for i=1, ci-1 do
+				prespace = prespace + 1
+				table.remove(utf8_c, 1)
+			end
+			break
+		elseif ci == #utf8_c then
+			prespace = #utf8_c
+			utf8_c = {}
+		end
+	end
+	--Erase postspace
+	local postspace = 0
+	for ci=#utf8_c, 1, -1 do
+		if utf8_c[ci] ~= " " and utf8_c[ci] ~= "\t" then
+			for i=#utf8_c, ci+1, -1 do
+				postspace = postspace + 1
+				table.remove(utf8_c)
+			end
+			break
+		end
+	end
+	--Return trimmed string
+	return table.concat(utf8_c), prespace, postspace
+end

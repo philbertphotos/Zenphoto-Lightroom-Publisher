@@ -4,20 +4,13 @@ ZenphotoAPI.lua
 Common code to initiate Zenphoto API requests
 
 ------------------------------------------------------------------------------]]
-
-	-- Lightroom SDK
 local LrDialogs 		= import 'LrDialogs'
 local LrFunctionContext = import 'LrFunctionContext'
 local LrHttp 			= import 'LrHttp'
 local LrMD5 			= import 'LrMD5'
 local LrPathUtils 		= import 'LrPathUtils'
 local LrXml 			= import 'LrXml'
-local LrStringUtils		= import 'LrStringUtils'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
-
-    -- Logger
-local LrLogger = import 'LrLogger'
-local log = LrLogger( 'ZenphotoLog' )
 
 --============================================================================--
 
@@ -28,13 +21,16 @@ ZenphotoAPI = {}
 function initRequestParams()
 	log:info('initRequestParams')
 	local paramMap = {}
-	local ind = tonumber(prefs.instanceID)
-
+	local ind = tonumber(publishServiceID)
+if ind == nil then
+end
 	local username = prefs.instanceTable[ind].username
 	local password = prefs.instanceTable[ind].password
+	local loglevel = prefs.logLevel
 
 	table.insert( paramMap, { paramName = 'loginUsername', paramType = 'string', paramValue = username } )
 	table.insert( paramMap, { paramName = 'loginPassword', paramType = 'string', paramValue = password } )
+	table.insert( paramMap, { paramName = 'debugLog', paramType = 'string', paramValue = loglevel } )
 	return paramMap
 end
 
@@ -42,37 +38,35 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.authorize( login, password ) 
-
-	log:info('Authorizing with Zenphoto... Username: ' .. tostring(login) .. ' width password ' .. tostring(password))
+	log:info('Authorizing with Zenphoto... Username: ' .. tostring(login) .. ' with password ' .. tostring(password))
 
 	local auth = false
 	local showMsg = true
 	
 	local paramMap = initRequestParams()
-	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.login', paramMap, true )
-
-
+	local xmlResponse = trim(ZenphotoAPI.sendXMLRequest( 'zenphoto.login', paramMap, true ))
+		local xmlResponse = xmlfix(xmlResponse,"methodResponse")
 	-- Parse response
-	if prefs.logLevel == 'verbose' then
 	log:debug("xmlResponse: "..tostring(xmlResponse))
-	end
 	if not xmlResponse or string.find(xmlResponse, 'html') then
 		LrDialogs.message( 'Server could not be connected!', 'Please make sure that an internet connection is established and that the web service is running.', 'error' )
+		log:fatal('Server could not be connected!')
 		fault = true
 		showMsg = false
 	end
-
-	
 	local faltString, faultCode = ZenphotoAPI.getXMLError(xmlResponse);
+	--log:fatal("faultCode")
 	if faultCode == '-2' then
 		LrDialogs.message( 'Zenphoto version error!', faltString, 'error' )
+		log:fatal( 'Zenphoto version error!', faltString, 'error' )
 		fault = true
 		showMsg = false	
 	end
 
 	if faultCode == '-1' then
+	log:info('Authorization failed!')
 		auth = false
-		showMsg = true
+		showMsg = true		
 	else
 		log:info('Authorization successful')
 		auth = true
@@ -101,7 +95,7 @@ function ZenphotoAPI.uploadPhoto( filePath, params )
 
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.upload', paramMap, true )
 
---	log:info(xmlResponse)
+	log:debug('uploadPhoto:'..xmlResponse)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
 end
@@ -119,8 +113,7 @@ function ZenphotoAPI.uploadXMLPhoto( filename, params, file )
 	end
 	
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.uploadXML', paramMap, true )
-
---	log:info(xmlResponse)
+	log:debug('uploadPhotoXML:'..xmlResponse)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
 end
@@ -130,17 +123,14 @@ end
 function ZenphotoAPI.getAlbums( propertyTable, simple )	
 	log:info('Get list of all albums')
 
---	if propertyTable then
---		ZenphotoAPI.initPublishServiceID(propertyTable)
---	end
-		
 	local paramMap = initRequestParams()
 	if simple then
 		table.insert( paramMap, { paramName = 'simplelist', paramType = 'string', paramValue = tostring(simple) } )
 	end
+	log:info('getAlbums paramMap: '..table_show(paramMap))
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.getList', paramMap, true )
 	
---	log:info(xmlResponse)
+	log:debug('getAlbums: '..xmlResponse)
 
 	if simple == true then
 		local result = ZenphotoAPI.getTableFromXML(xmlResponse, true)
@@ -154,16 +144,66 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.getAlbumImages(id)	
-	log:info('Get images from album ' .. tostring(id))
+	log:info('Get images from album')
 
 	local paramMap = initRequestParams()
 	table.insert( paramMap, { paramName = 'id',	paramType = 'string', paramValue = id } )
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.getImages', paramMap, true )
 
---	log:info(xmlResponse)
-	
+	log:debug('getAlbumImages:'..xmlResponse)
+	--log:debug('getAlbumImages.paramMap'..table_show(paramMap))
 	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
 end
+
+--------------------------------------------------------------------------------
+
+function ZenphotoAPI.getImageComments(id, propertyTable)	
+	log:info('ZenphotoAPI.Getimagecomments: '..table_show(getImageComments))
+
+	local zenphotoURLroot = 'http://'..prefs.instanceTable[publishServiceID].host..'/'
+local paramMap = initRequestParams()
+		table.insert( paramMap, { paramName = 'Id', paramType = 'string', paramValue = id.remoteId } )
+ 		table.insert( paramMap, { paramName = 'url', paramType = 'string', paramValue = zenphotoURLroot..id.url } ) 
+		
+	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.get.comments', paramMap, true )
+log:info('paramMap: '..table_show(paramMap))
+	log:debug('getImageComments:'..xmlResponse)
+	log:debug('getImageComments.paramMap '..table_show(paramMap))
+	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
+end
+
+---------------------------------------------------------------------------------
+function ZenphotoAPI.addComment( propertyTable, params )
+log:info('ZenphotoAPI.addComment '..table_show(params))
+
+local paramMap = initRequestParams()
+		table.insert( paramMap, { paramName = 'Id', paramType = 'string', paramValue = params.Id } ) 
+		table.insert( paramMap, { paramName = 'commentText', paramType = 'string', paramValue = params.commentText } ) 
+		local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.add.comment', paramMap, true )
+		
+		log:info('addImageComments paramMap : '..table_show(paramMap))
+		
+		log:debug('addImageComment:'..xmlResponse)
+--[[function getnum(_index)
+log _index
+end
+table.foreachi( id , getnum)--]]	
+	return ZenphotoAPI.getSingleValueXML(xmlResponse)
+end 
+
+---------------------------------------------------------------------------------
+function ZenphotoAPI.getImageRating( propertyTable, params )
+log:info('ZenphotoAPI.getImageRating: '.. table_show(params))
+
+local paramMap = initRequestParams()
+		table.insert( paramMap, { paramName = 'Id', paramType = 'string', paramValue = params.photoId } ) 
+		local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.get.ratings', paramMap, true )
+		
+		log:info('getRating paramMap : '..table_show(paramMap))
+		log:debug('getRating:'..xmlResponse)	
+	return ZenphotoAPI.getSingleValueXML(xmlResponse)
+end 
+
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.deletePhoto(propertyTable, params)
@@ -175,38 +215,39 @@ function ZenphotoAPI.deletePhoto(propertyTable, params)
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
+	
 	log:info(paramMap)
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.delete', paramMap, true )
 
-	log:info("deletePhoto.xmlResponse: " .. xmlResponse)
+	log:debug("deletePhoto.xmlResponse: " .. xmlResponse)
 	
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.deleteAlbum( propertyTable, albumId )
-	log:info('Delete album from server with imageId: ' .. albumId)
+	log:info('Delete album from server with imageId: ' .. table_show(albumId))
 
 	local paramMap = initRequestParams()
-		log:info(paramMap)
+		log:info('deleteAlbum'..table_show(paramMap))
 	table.insert( paramMap, { paramName = 'id', paramType = 'string', paramValue = albumId } )
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.delete', paramMap, true )
---log:info(paramMap)
-	log:info("deleteAlbum.xmlResponse: " .. xmlResponse)
+--log:info(deleteAlbumAPI: ..table_show(paramMap))
+	log:debug("deleteAlbum.xmlResponse: " .. xmlResponse)
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
 
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.createAlbum( propertyTable, params )
-	log:info('Create a new album: ' .. params.name)
+	log:info('Create a new album: ' .. table_show(params))
 	local paramMap = initRequestParams()
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.create', paramMap, true )
 
---	log:info(xmlResponse)
+	log:debug("createAlbum.xmlResponse: " .. xmlResponse)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
 end
@@ -214,14 +255,14 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.editAlbum( propertyTable, params )
-	log:info('Edit Zenphoto album: ')
+	log:info('Edit Zenphoto album: '..table_show(params))
 	local paramMap = initRequestParams()
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.edit', paramMap, true )
 
---	log:info(xmlResponse)
+	log:debug("editAlbum.xmlResponse: " .. xmlResponse)
 
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
 end
@@ -230,37 +271,37 @@ end
 
 
 function ZenphotoAPI.initPublishServiceID( propertyTable )
-
+log:trace( 'initPublishServiceID')
 	local catalog = import 'LrApplication'.activeCatalog()
 	local publishServices = catalog:getPublishServices( _PLUGIN.id )
-
+log:trace( 'initPublishServiceID'..table_show(publishServices))
 		for i, publishService in pairs ( publishServices ) do
 			if ( publishService:getName() == propertyTable.LR_publish_connectionName) then
 				publishServiceID = publishService.localIdentifier
 			end
 		end
-	
 	return publishServiceID
-	
 end
 
 function ZenphotoAPI.getTableFromXML(xmlResponse, formatForUI, allowSingleEntry)
-
+log:trace( 'ZenphotoAPI.getTableFromXML Main' )
 	if formatForUI == nil then formatForUI = false end
 	if allowSingleEntry == nil then allowSingleEntry = true end
 
 	if not xmlResponse then
 		LrDialogs.message( 'Server could not be connected!', 'Please make sure that an internet connection is established and that the web service is running.', 'error' )
+		log:fatal('Server could not be connected!', 'Please make sure that an internet connection is established and that the web service is running.', 'error')
 		return {}
 	end
 
---	log:info(xmlResponse)
+	--log:debug("Debug getTableFromXML:"..xmlResponse)
 	
 	local responseDocument = LrXml.parseXml( xmlResponse, true )
 	responseDocument = responseDocument:childAtIndex(1)
 
 	-- show when image was not found
 	if responseDocument:name() == "fault" then
+	log:info ('show when image was not found')
 		return nil, ZenphotoAPI.getXMLError(xmlResponse)
 	end
 
@@ -290,7 +331,7 @@ function ZenphotoAPI.getTableFromXML(xmlResponse, formatForUI, allowSingleEntry)
 		end
 	end
 
---	log:info(luaTableString)
+	--log:debug(luaTableString)
 	
 	local luaTableFunction = luaTableString and loadstring( luaTableString )
 	local _, resultTable = LrFunctionContext.pcallWithEmptyEnvironment( luaTableFunction )
@@ -302,53 +343,15 @@ function ZenphotoAPI.getTableFromXML(xmlResponse, formatForUI, allowSingleEntry)
 	end
 end
 
-
-function decode64(value)
-
-	if type(value) == 'table' then
-		for k,v in pairs(value) do
-			if type(v) == 'table' then
-				value[k] = decode64(v)
-			else
-				value[k] = LrStringUtils.decodeBase64(v)
-			end
-		end
-	else
-		value = LrStringUtils.decodeBase64(value)
-	end
-	
-	return value
-end
-
-function encode64(value)
-
-	if type(value) == 'table' then
-		for k,v in pairs(value) do
-			if type(v) == 'table' then
-				value[k] = encode64(v)
-			else
-				if k == 'paramValue' then
-					value[k] = LrStringUtils.encodeBase64(v)
-				end
-			end
-		end
-	else
-		value = LrStringUtils.encodeBase64(value)
-	end
-	
-	return value
-end
-
-
-
 function ZenphotoAPI.getListFromXML(xmlResponse)
-
+log:trace( 'getListFromXML' )
 	local responseDocument = LrXml.parseXml( xmlResponse, true )
 	responseDocument = responseDocument:childAtIndex(1)
 
 	-- show when image was not found
 	if responseDocument:name() == "fault" then
 		error(ZenphotoAPI.getXMLError(xmlResponse))
+		log:fatal(ZenphotoAPI.getXMLError(xmlResponse))
 	end
 
 	local xslt = [[
@@ -375,13 +378,13 @@ function ZenphotoAPI.getListFromXML(xmlResponse)
 end
 
 function ZenphotoAPI.getSingleValueXML(xmlResponse)
-
+log:trace("ZenphotoAPI.getSingleValueXML")
 	local responseDocument = LrXml.parseXml( xmlResponse, true )
 	responseDocument = responseDocument:childAtIndex(1)
 
 	-- show when image was not found
 	if responseDocument:name() == "fault" then
-		log:debug(ZenphotoAPI.getXMLError(xmlResponse))
+		log:debug('image was not found err'..ZenphotoAPI.getXMLError(xmlResponse))
 	end
 
 	local responseDocument = LrXml.parseXml(xmlResponse)
@@ -394,19 +397,18 @@ function ZenphotoAPI.getSingleValueXML(xmlResponse)
 		</xsl:stylesheet>
 	]]
 	local responseString = responseDocument:transform(transformString)
-
 	return trim(responseString)
 end
-
 
 --------------------------------------------------------------------------------
 
 	-- handle errors and return the error code and string
 
 function ZenphotoAPI.getXMLError(xmlResponse)
-
+log:trace("ZenphotoAPI.getXMLError")
 	local responseDocument = LrXml.parseXml(xmlResponse)
-
+--log:trace("responseDocument")
+log:debug("xmlResponse.getXMLError: " ..xmlResponse)
 	local xslt = [[
 				<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 					<xsl:output method="text"/>
@@ -419,9 +421,7 @@ function ZenphotoAPI.getXMLError(xmlResponse)
 					</xsl:template>
 				</xsl:stylesheet>
 				]]
-				
 	local luaTableString = responseDocument:transform( xslt )
-
 	--
 	-- if no error and result was true
 	--
@@ -434,17 +434,15 @@ function ZenphotoAPI.getXMLError(xmlResponse)
 	if resultTable.faultCode == '-32700' then
 		resultTable.faultString = 'HTML tags, like "<p>" etc., are only allowed in the description!'
 	end
-	
+	log:trace("resultTable" .. resultTable.faultString, resultTable.faultCode)
 	return resultTable.faultString, resultTable.faultCode
 end
-
-
 --------------------------------------------------------------------------------
 
 	-- Params are list of maps with keys: paramName, paramType, paramValue
 
 function ZenphotoAPI.sendXMLRequest( methodName, params )
-	
+	log:trace("ZenphotoAPI.sendXMLRequest")
 	local params = encode64(params)
 	
 	local xmlBuilder = LrXml.createXmlBuilder( false )
@@ -472,41 +470,36 @@ function ZenphotoAPI.sendXMLRequest( methodName, params )
 	xmlBuilder:endBlock( 'params' )
 
 	xmlBuilder:endBlock( 'methodCall' )
-
 	local xmlString = xmlBuilder:serialize()
 	xmlString = string.gsub(xmlString, '&lt;','<')
 	xmlString = string.gsub(xmlString, '&gt;','>')
 
 	--log:info ('Sending XML String ' .. xmlString)	
 	--log:info ('CONTENT LENGTH is ' .. tostring( #xmlString ))
-	--log:info ('Request XML is ' .. xmlString)
+	--log:info ('Request XML is ' .. utf8trim(xmlString))
 	
 	-- build headers
 	local headers = {}
 	table.insert( headers, { field = 'User-Agent', value = 'Adobe Photoshop Lightroom Zenphoto Publish Plugin' } )
-	table.insert( headers, { field = 'Content-Type', value = 'text/xml; charset=utf-8' } )
-	table.insert( headers, { field = 'Content-length', value = tostring( #xmlString ) } )
-
+	table.insert( headers, { field = 'Content-Type', value = 'text/xml; charset=unicode' } )
+	table.insert( headers, { field = 'Content-length', value = trim(tostring( #xmlString) ) } )
 	
-	zenphotoHost = prefs.instanceTable[prefs.instanceID].host
+	zenphotoHost = prefs.instanceTable[publishServiceID].host
 	zenphotoURL = 'http://'..zenphotoHost..'/'..prefs.webpath..'/xmlrpc.php'
-
+	
 	-- send request
 	table.insert( headers, { field = 'Host', value = zenphotoHost} )			
-	
--- log:info(xmlString)
-	local responseXML, responseHeaders = LrHttp.post( zenphotoURL, xmlString, headers, 'POST' ) 
--- log:info(responseXML)
-	
+	local responseXML, responseHeaders = LrHttp.post( zenphotoURL, xmlString, headers, 'POST' )	
+	local responseXML = xmlfix(responseXML,"methodResponse") 
+	--log:debug("ZenphotoAPI.sendXML-RequestresponseXML: "..responseXML)
 	return responseXML
-
 end
 
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.uploadFile( filePath )
-
-	local zenphotoHost = prefs.instanceTable[prefs.instanceID].host
+	log:info('uploadFile')
+	local zenphotoHost = prefs.instanceTable[publishServiceID].host
 	local zenphotoURL = 'http://'..zenphotoHost..'/'..prefs.webpath..'/xmlrpc_upload.php'
 
 	log:info( 'Uploading photo', zenphotoURL )
@@ -514,17 +507,16 @@ function ZenphotoAPI.uploadFile( filePath )
 	local filename = LrPathUtils.leafName( filePath )	
 
 	local mimeChunks = {}
---	mimeChunks[ #mimeChunks + 1 ] = { name = 'folder', value = "folder" }
 	mimeChunks[ #mimeChunks + 1 ] = { name = 'photo', fileName = filename, filePath = filePath, contentType = 'application/octet-stream' }
 
 	-- Post it and wait for confirmation.
 	local result, hdrs = LrHttp.postMultipart( zenphotoURL, mimeChunks )
 
 	if result and string.find(result, 'Permission denied') then
+	log:info('uploadFile.Permission denied')
 		return 'Please make sure you have sufficient writing permissions to write to "'..prefs.webpath..'"'
 	end
 	
---	log:info(result)
---	log:info(hdrs)
---	tdump(hdrs)
+--	log:info('upload-result'..table_show(result))
+--	log:info('hdrs'..table_show(hdrs)
 end
