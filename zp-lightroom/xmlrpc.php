@@ -317,6 +317,17 @@ function getAlbumList($args)
  *	retrieve all images from an album
  *
  **/
+ 	function getAlbumForAlbumID($id) {
+$row = query_single_row('SELECT folder FROM '.prefix("albums").' WHERE id='.$id.' LIMIT 1', true);
+
+if (!$row['folder'])
+return null;
+
+$album = new Album(new Gallery(), $row['folder']);
+makeAlbumCurrent($album);
+return $album;
+}
+
 function getAlbumImages($args)
 {
     global $_zp_current_image;
@@ -324,17 +335,11 @@ function getAlbumImages($args)
     if (is_object($login_state = authorize($args)))
         return $login_state;
     
-    $args = decode64($args); 
-	
-	$albumsobject = getItemByID("albums", $id);
-
-if (!$albumsobject['folder'])
-$nalbum = null;
-
-$nalbum = new Album(new Gallery(), $albumsobject['folder']);
-makeAlbumCurrent($nalbum);
-
-    if (!($album = $nalbum) || !$args['id'])
+    $args = decode64($args);
+    
+	//$albumobject = getItemByID("albums", $args['Id']);
+	//debugLog('getAlbumImages: '. $albumobject);
+    if (!($album = getAlbumForAlbumID($args['id'])) || !$args['id'])
     //if (!($albumobject || !$args['id']))
         return new IXR_Error(-1, 'No folder with database ID ' . $args['id'] . ' found!');
     
