@@ -25,8 +25,16 @@ publishServiceExtention = {}
 
 --------------------------------------------------------------------------------
 
-function publishServiceExtention.getImages( publishedCollection, id, publishService, context)
+function publishServiceExtention.getImages( publishedCollection, id, publishSettings, context)
 	log:info('getImages')
+	
+		--set instance ID
+	publishServiceID = publishSettings.instance_ID
+	
+	--log:info('getImages1: '..table_show(publishedCollection))
+	--log:info('getImages2: '..table_show(publishService))
+	--log:info('getImages3: '..table_show(context))
+	--log:info('getImages4: '..table_show(id))
 	
     local progressScope = LrDialogs.showModalProgressDialog({
       title = 'Syncing image data from server',
@@ -88,14 +96,14 @@ function publishServiceExtention.getImages( publishedCollection, id, publishServ
 			end)
 		else
 			log:info("- photo: " .. imagename)
-			table.insert(prefs.instanceTable[instanceID].missing, imagename)
+			table.insert(prefs.instanceTable[publishServiceID].missing, imagename)
 		end
 	end
 	log:info('reading images from server...done')
 	LrTasks.yield()
 	progressScope:done()
 
-	return prefs.instanceTable[instanceID].missing
+	return missing
 end
 
 --

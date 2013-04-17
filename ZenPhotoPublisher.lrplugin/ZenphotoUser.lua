@@ -14,7 +14,6 @@ local bind 				= LrView.bind
 local share 			= LrView.share
 
 local util              = require 'Utils'
-
 --============================================================================--
 
 ZenphotoUser = {}

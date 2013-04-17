@@ -346,7 +346,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 												LrFunctionContext.callWithContext('function', function(context)
 
 													prefs.instanceTable[prefs.instanceID].missing[remoteId] = {}
-													collectionSettings.missing = publishServiceExtention.getImages( pubCollection, remoteId, info.publishService, context)
+													collectionSettings.missing = publishServiceExtention.getImages( pubCollection, remoteId, publishSettings, context)
 													prefs.instanceTable[prefs.instanceID].missing[remoteId] = collectionSettings.missing
 
 												end)
@@ -361,8 +361,8 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 								enabled = bind {
 									keys = { 'missing' },
 									operation = function( binder, values, fromTable )
-									log:trace('missing prefs: '..values.prefs.instanceTable[prefs.instanceID].missing )
-													return values.prefs.instanceTable[prefs.instanceID].missing ~= nil and #values.prefs.instanceTable[prefs.instanceID].missing > 0
+									log:trace('missing prefs: '..values.missing )
+													return values.missing ~= nil and #values.missing > 0
 												end,
 									},
 								action = function()
@@ -377,7 +377,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 								enabled = bind {
 									keys = { 'missing' },
 									operation = function( binder, values, fromTable )
-													return values.prefs.instanceTable[prefs.instanceID].missing ~= nil and #values.prefs.instanceTable[prefs.instanceID].missing > 0
+													return values.missing ~= nil and #values.missing > 0
 												end,
 									},
 								action = function()
@@ -741,8 +741,9 @@ if prefs.instanceTable[pi] then
 end
 
 function publishServiceProvider.didUpdatePublishService( publishSettings, info )
-	log:trace("didUpdatePublishService (n/a)")
-		LrDialogs.message(prefs.instanceTable[prefs.instanceID])
+log:trace("didUpdatePublishService: ")
+	log:debug("didUpdate PublishSettings: ".. table_show(publishSettings))
+	log:debug("didUpdate Info: ".. table_show(info))
 end
 
 function publishServiceProvider.shouldDeletePublishService( publishSettings, info )

@@ -111,8 +111,8 @@ function ZenphotoAPI.uploadXMLPhoto( filename, params, file )
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
-	
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.uploadXML', paramMap, true )
+	log:debug('uploadPhoto.paramMap: '..table_show(paramMap))
 	log:debug('uploadPhotoXML:'..xmlResponse)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
@@ -127,9 +127,9 @@ function ZenphotoAPI.getAlbums( propertyTable, simple )
 	if simple then
 		table.insert( paramMap, { paramName = 'simplelist', paramType = 'string', paramValue = tostring(simple) } )
 	end
-	log:info('getAlbums paramMap: '..table_show(paramMap))
-	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.getList', paramMap, true )
 	
+	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.getList', paramMap, true )
+	log:debug('getAlbums paramMap: '..table_show(paramMap))
 	log:debug('getAlbums: '..xmlResponse)
 
 	if simple == true then
@@ -149,9 +149,8 @@ function ZenphotoAPI.getAlbumImages(id)
 	local paramMap = initRequestParams()
 	table.insert( paramMap, { paramName = 'id',	paramType = 'string', paramValue = id } )
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.getImages', paramMap, true )
-
+	log:debug('getAlbumImages.paramMap'..table_show(paramMap))
 	log:debug('getAlbumImages:'..xmlResponse)
-	--log:debug('getAlbumImages.paramMap'..table_show(paramMap))
 	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
 end
 
@@ -166,9 +165,8 @@ local paramMap = initRequestParams()
  		table.insert( paramMap, { paramName = 'url', paramType = 'string', paramValue = zenphotoURLroot..id.url } ) 
 		
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.get.comments', paramMap, true )
-log:info('paramMap: '..table_show(paramMap))
-	log:debug('getImageComments:'..xmlResponse)
 	log:debug('getImageComments.paramMap '..table_show(paramMap))
+	log:debug('getImageComments:'..xmlResponse)
 	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
 end
 
@@ -181,8 +179,7 @@ local paramMap = initRequestParams()
 		table.insert( paramMap, { paramName = 'commentText', paramType = 'string', paramValue = params.commentText } ) 
 		local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.add.comment', paramMap, true )
 		
-		log:info('addImageComments paramMap : '..table_show(paramMap))
-		
+		log:info('addImageComments paramMap : '..table_show(paramMap))		
 		log:debug('addImageComment:'..xmlResponse)
 --[[function getnum(_index)
 log _index
@@ -199,7 +196,7 @@ local paramMap = initRequestParams()
 		table.insert( paramMap, { paramName = 'Id', paramType = 'string', paramValue = params.photoId } ) 
 		local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.get.ratings', paramMap, true )
 		
-		log:info('getRating paramMap : '..table_show(paramMap))
+		log:debug('getRating paramMap : '..table_show(paramMap))
 		log:debug('getRating:'..xmlResponse)	
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end 
@@ -215,11 +212,10 @@ function ZenphotoAPI.deletePhoto(propertyTable, params)
 	for key,value in pairs(params) do 
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
-	
-	log:info(paramMap)
-	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.delete', paramMap, true )
 
-	log:debug("deletePhoto.xmlResponse: " .. xmlResponse)
+	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.image.delete', paramMap, true )
+		log:debug('deletePhoto: '..table_show(paramMap))
+		log:debug("deletePhoto.xmlResponse: " .. xmlResponse)
 	
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
@@ -232,7 +228,7 @@ function ZenphotoAPI.deleteAlbum( propertyTable, albumId )
 		log:info('deleteAlbum'..table_show(paramMap))
 	table.insert( paramMap, { paramName = 'id', paramType = 'string', paramValue = albumId } )
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.delete', paramMap, true )
---log:info(deleteAlbumAPI: ..table_show(paramMap))
+	log:debug('deleteAlbum: ' ..table_show(paramMap))
 	log:debug("deleteAlbum.xmlResponse: " .. xmlResponse)
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end
@@ -246,7 +242,7 @@ function ZenphotoAPI.createAlbum( propertyTable, params )
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.create', paramMap, true )
-
+	log:debug('createAlbum: '..table_show(paramMap))
 	log:debug("createAlbum.xmlResponse: " .. xmlResponse)
 	
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
@@ -261,7 +257,7 @@ function ZenphotoAPI.editAlbum( propertyTable, params )
 		table.insert( paramMap, { paramName = key, paramType = 'string', paramValue = value } ) 
 	end
 	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.album.edit', paramMap, true )
-
+	log:debug('editAlbum: '..table_show(paramMap))
 	log:debug("editAlbum.xmlResponse: " .. xmlResponse)
 
 	return ZenphotoAPI.getTableFromXML(xmlResponse)
@@ -498,14 +494,11 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.uploadFile( filePath )
-	log:info('uploadFile')
+	log:trace('uploadFile/s')
 	local zenphotoHost = prefs.instanceTable[publishServiceID].host
 	local zenphotoURL = 'http://'..zenphotoHost..'/'..prefs.webpath..'/xmlrpc_upload.php'
-
-	log:info( 'Uploading photo', zenphotoURL )
-
-	local filename = LrPathUtils.leafName( filePath )	
-
+	local  filename = LrPathUtils.leafName( filePath )	
+	log:info( 'Uploading photo: ' ..filename )
 	local mimeChunks = {}
 	mimeChunks[ #mimeChunks + 1 ] = { name = 'photo', fileName = filename, filePath = filePath, contentType = 'application/octet-stream' }
 

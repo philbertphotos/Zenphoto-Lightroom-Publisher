@@ -337,18 +337,18 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 			LrTasks.yield()
 			
 			remoteId = pubCollection:getRemoteId()
-
+log:info('sync Images test'..table_show(publishService))
 			if remoteId and pubCollection:getName() ~= 'Sync Albums/Images' then
 				LrFunctionContext.callWithContext('sync Images', function(context)
-					result = publishServiceExtention.getImages( pubCollection, remoteId, nil, context)
+					result = publishServiceExtention.getImages( pubCollection, remoteId, publishSettings, context)
 					prefs.instanceTable[instanceID].missing[remoteId] = result
-					prefs.instanceTable[instanceID].missing = Utils.joinTables(missing, result)
+					missing = Utils.joinTables(missing, result)
 				end)
 			end
 		end
 		log:info('finish syncing album and images')
 		
-		if #prefs.instanceTable[instanceID].missing > 0 then Utils.showMissingFilesDialog(missing) end
+		if #missing > 0 then Utils.showMissingFilesDialog(missing) end
 		log:trace('missing greater than 0')
 	end
 end
