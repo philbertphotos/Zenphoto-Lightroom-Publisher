@@ -4,7 +4,7 @@
 //	make sure that the WEBPATH is set to parent directory for correct URL values
 //4.0.1
 $dir = str_replace('\\', '/', realpath(dirname(__FILE__)));
-define('SERVERPATH', strstr($dir, '/plugins/zp-lightroom', true));
+define('SERVERPATH', str_replace('/plugins/zp-lightroom','',$dir));
 
 require_once(SERVERPATH . '/zp-core/functions.php');
 include_once(SERVERPATH . '/zp-core/template-functions.php');
@@ -318,7 +318,8 @@ function getAlbumList($args)
  *
  **/
  	function getAlbumForAlbumID($id) {
-$row = query_single_row('SELECT folder FROM '.prefix("albums").' WHERE id='.$id.' LIMIT 1', true);
+//$row = query_single_row('SELECT folder FROM '.prefix("albums").' WHERE id='.$id.' LIMIT 1', true);
+$row = getItemByID("albums",($id));
 
 if (!$row['folder'])
 return null;
@@ -340,6 +341,7 @@ function getAlbumImages($args)
 	//$albumobject = getItemByID("albums", $args['Id']);
 	//debugLog('getAlbumImages: '. $albumobject);
     if (!($album = getAlbumForAlbumID($args['id'])) || !$args['id'])
+    //if (!($album = getItemByID("albums",($args['id']))) || !$args['id'])
     //if (!($albumobject || !$args['id']))
         return new IXR_Error(-1, 'No folder with database ID ' . $args['id'] . ' found!');
     
