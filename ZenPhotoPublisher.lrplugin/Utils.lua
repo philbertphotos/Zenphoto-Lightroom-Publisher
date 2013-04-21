@@ -38,10 +38,10 @@ Utils = {}
 	--
 function xmlfix(str, x)
 if (str ~= nil) then
-if string.find(str, '</'..x..'>')  then
+if string.find(str, '</'..x..'e>')  then
 return str
 else
-return string.gsub(str, '</'..x, '</'..x..'>')
+return string.gsub(str, '</'..x, '</'..x..'e>')
 end
 end
 end
@@ -369,6 +369,53 @@ function table_show (tt, indent, done)
   end
 end
 
+	--
+-- table dump
+--
+function tdump(t)
+local function dmp(t, l, k)
+if type(t) == "table" then
+if prefs.logLevel == 'verbose' then
+log:debug('tdump:',string.format("%s%s:", string.rep(" ", l*2), tostring(k)))
+end
+for k, v in pairs(t) do
+dmp(v, l+1, k)
+end
+else
+if prefs.logLevel == 'verbose' then
+log:debug(string.format('tdump:', "%s%s:%s", string.rep(" ", l*2), tostring(k), tostring(t)))
+end
+end
+end
+
+dmp(t, 1, "root")
+end
+
+-- alt version2, handles cycles, functions, booleans, etc
+--  - abuse to http://richard.warburton.it
+-- output almost identical to print(table.show(t)) below.
+function print_r (t, name, indent)
+  local tableList = {}
+  function table_r (t, name, indent, full)
+    local serial=string.len(full) == 0 and name
+        or type(name)~="number" and '["'..tostring(name)..'"]' or '['..name..']'
+    log:debug(indent,serial,' = ') 
+    if type(t) == "table" then
+      if tableList[t] ~= nil then log:debug('{}; -- ',tableList[t],' (self reference)\n')
+      else
+        tableList[t]=full..serial
+        if next(t) then -- Table not empty
+          log:debug('{\n')
+          for key,value in pairs(t) do table_r(value,key,indent..'\t',full..serial) end 
+          log:debug(indent,'};\n')
+        else log:debug('{};\n') end
+      end
+    else log:debug(type(t)~="number" and type(t)~="boolean" and '"'..tostring(t)..'"'
+                  or tostring(t),';\n') end
+  end
+  table_r(t,name or '__unnamed__',indent or '','')
+ end
+  
 function table_show(t, name, indent)
    local cart     -- a container
    local autoref  -- for self references

@@ -59,6 +59,7 @@ exportServiceProvider.exportPresetFields = {
 		{ key = 'loginButtonTitle', default = "DISABLED" },
 		{ key = 'instanceKey', default=(import 'LrDate').currentTime()},
 		{ key = 'uploadMethod', default = "POST" },
+		{ key = 'deepscan', default = "1" },
 		{ key = 'token', default = "" },
 	}
 --------------------------------------------------------------------------------
@@ -72,6 +73,8 @@ log:trace("exportServiceProvider.startDialog")
 	prefs.instanceID = publishServiceID	
 	
 	instanceID = tonumber(trim(prefs.instanceID))
+	
+	--set Gobal instance mandotory to support multiple publiser instances.
 	propertyTable.instance_ID = publishServiceID
 	
 	log:info("publishServiceID:" ..publishServiceID)
@@ -81,7 +84,7 @@ log:trace("exportServiceProvider.startDialog")
 	else
 		log:trace("instanceId is nil = ",prefs.instanceID)
 	end
-				--if prefs.instanceTable ~= nil then --or prefs.instanceTable.instanceID ~= true then
+			--if prefs.instanceTable ~= nil or prefs.instanceTable.instanceID ~= true then
 			-- creating instance table in prefs
 				if prefs.instanceTable == nil then
 					log:info("Creating instance table")
@@ -100,7 +103,8 @@ if prefs.instanceTable[instanceID] then
 					uploadMethod = propertyTable.uploadMethod,
 					username = "yourname",
 					password = "password",
-					token = "", 
+					token = "",
+					deepscan = "1"
 					}
 				)				
 			end
@@ -276,8 +280,11 @@ log:info('--START LOG--')
 end
 
 --------------------------------------------------------------------------------
-function exportServiceProvider.sync( fullsync, publishService, context )
-
+function exportServiceProvider.sync( fullsync, publishService, context, publishSettings )
+log:trace('exportServiceProvider.sync')
+		--set instance ID
+	publishServiceID = publishSettings.instance_ID
+	
 	local catalog = import 'LrApplication'.activeCatalog()
 	local albums = ZenphotoAPI.getAlbums()
 	LrFunctionContext.callWithContext('sync Albums', function(context)
@@ -337,12 +344,13 @@ function exportServiceProvider.sync( fullsync, publishService, context )
 			LrTasks.yield()
 			
 			remoteId = pubCollection:getRemoteId()
-log:info('sync Images test'..table_show(publishService))
+--log:debug('sync Images test'..table_show(publishService))
+--log:debug('sync remoteId '..remoteId)
 			if remoteId and pubCollection:getName() ~= 'Sync Albums/Images' then
 				LrFunctionContext.callWithContext('sync Images', function(context)
-					result = publishServiceExtention.getImages( pubCollection, remoteId, publishSettings, context)
-					prefs.instanceTable[instanceID].missing[remoteId] = result
-					missing = Utils.joinTables(missing, result)
+					result = publishServiceExtention.getImages( pubCollection, remoteId, publishService, context)
+	--				prefs.instanceTable[instanceID].missing[remoteId] = result
+	--				missing = Utils.joinTables(missing, result)
 				end)
 			end
 		end
@@ -359,7 +367,7 @@ end
 --
 --
 function exportServiceProvider.deleteMissingPhotos(arrayOfPhotoNames)
-
+log:trace('exportServiceProvider.deleteMissingPhotos')
 	result = LrDialogs.confirm( 'Delete the "not found images" from the server', 
 								'Do you really want to delete the images that were not found on your Zenphoto webserver?',
 								'Delete', 
@@ -402,6 +410,7 @@ end
 
 
 function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
+	log:trace('exportServiceProvider.processRenderedPhotos')
 	-- Check for photos that have been uploaded already.
 	local exportSession = exportContext.exportSession
 
@@ -430,8 +439,10 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 		local errors = nil
 		local photo = rendition.photo
 		local photoname = photo:getFormattedMetadata('fileName')
-
+		local photodate = photo:getFormattedMetadata('dateTimeOriginal')
+		
 		log:info('Getting next photo...' .. photoname)
+		log:info('Getting next photo...' .. photodate)
 		
 		if not rendition.wasSkipped then
 			

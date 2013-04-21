@@ -26,15 +26,12 @@ publishServiceExtention = {}
 --------------------------------------------------------------------------------
 
 function publishServiceExtention.getImages( publishedCollection, id, publishSettings, context)
-	log:info('getImages')
+	log:info('publishServiceExtention.getImages')
 	
-		--set instance ID
-	publishServiceID = publishSettings.instance_ID
-	
-	--log:info('getImages1: '..table_show(publishedCollection))
-	--log:info('getImages2: '..table_show(publishService))
-	--log:info('getImages3: '..table_show(context))
-	--log:info('getImages4: '..table_show(id))
+	log:info('getImages1: '..table_show(publishedCollection))
+	log:info('getImages2: '..table_show(publishSettings))
+	log:info('getImages3: '..table_show(context))
+	log:info('getImages4: '..table_show(id))
 	
     local progressScope = LrDialogs.showModalProgressDialog({
       title = 'Syncing image data from server',
@@ -67,36 +64,61 @@ function publishServiceExtention.getImages( publishedCollection, id, publishSett
 		
 		LrTasks.yield()
 		
+		imageid = trim(Utils.getFilenameNoExt(image.id))
 		imagename = trim(Utils.getFilenameNoExt(image.name))
-		photos = catalog:findPhotos {
+		imagesdate = trim(Utils.getFilenameNoExt(image.shortdate))
+		imageldate = trim(Utils.getFilenameNoExt(image.longdate))
+	
+photos = catalog:findPhotos {
 			searchDesc = {
 					criteria = 'filename',
 					operation = 'any',
 					value = imagename..'.',
 			},
 		}
---[[photos = catalog:findPhotos {
-			searchDesc = {
-					criteria = 'captureTime',
-					operation = 'any',
-					value = imagename..'.',
-			},
-		}--]]
 	
-		local photo = nil
+--end
+
+		--syncphoto = nil
 --		if photos and #photos > 1 then
 --			photo = publishServiceExtention.selectPhoto(photos, catalog)
 --		else
-			photo = photos[1]
---		end		
-		if photo then
+
+			--syncphoto = photos[1]
+			
+
+--		end
+function syncimage()	
+local match
+log:info('--START--')
+	for i, syncphoto in pairs ( photos ) do
+	    if imageldate == syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) then
+			match = photos[i] 
+			break	
+	elseif imageldate == nil then
+	match = photos[1]
+	break
+		end
+	end
+	return match
+end
+
+syncphoto = syncimage()
+--syncphoto = photos[1]
+	
+		if syncphoto then
 			catalog:withWriteAccessDo('add photo to collection', function()
-				log:info("+ photo: " .. photo:getFormattedMetadata( 'fileName' ))
-				publishedCollection:addPhotoByRemoteId( photo, image.id, image.url, true )
+				log:info("+ photo: " .. syncphoto:getFormattedMetadata( 'fileName' ), tostring(syncphoto), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) )
+				--log:info("+ photodate - adjust RAW: " .. photo:getRawMetadata( 'dateTime' ))
+				--log:info("+ photodateRAW: " .. syncphoto:getRawMetadata( 'dateTimeOriginal' ))
+				--log:info("publishedCollection:addPhotoByRemoteId: " .. tostring(syncphoto), image.name, image.id, image.longdate)
+				publishedCollection:addPhotoByRemoteId( syncphoto, image.longdate..image.id, image.id, image.url, true )
+				log:info('--END--\n\n')
 			end)
 		else
-			log:info("- photo: " .. imagename)
-			table.insert(prefs.instanceTable[publishServiceID].missing, imagename)
+			log:info("- photo: " .. imagename.." - "..imagesdate)
+			log:info("add to missing table TODO".. publishServiceID)
+			--table.insert(prefs.instanceTable[publishServiceID].missing, imagename)
 		end
 	end
 	log:info('reading images from server...done')

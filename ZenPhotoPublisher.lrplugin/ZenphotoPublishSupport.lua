@@ -21,7 +21,7 @@ require 'ZenphotoPublishSupportExtention'
 local publishServiceProvider = {}
 
 publishServiceProvider.small_icon = 'zenphoto_small.png'
-publishServiceProvider.publish_fallbackNameBinding = 'fullname'
+--publishServiceProvider.publish_fallbackNameBinding = 'fullname'
 publishServiceProvider.titleForPublishedCollection = 'Album'
 --publishServiceProvider.titleForPublishedCollectionSet = LOC "$$$/Zenphoto/titleForPublishedCollectionSet="
 publishServiceProvider.titleForPublishedCollection_standalone = LOC "$$$/Zenphoto/titleForPublishedCollection/Standalone=New Album"
@@ -50,7 +50,7 @@ function publishServiceProvider.getCollectionBehaviorInfo( publishSettings,info 
 end
 
 -- The setting to use for the publish service name if the user doesn't set one
---publishServiceProvider.publish_fallbackNameBinding = prefs.instanceTable[prefs.instanceID].host
+publishServiceProvider.publish_fallbackNameBinding = 'host'
 
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called whenever a new
@@ -106,6 +106,8 @@ end
 	--set instance ID
 	publishServiceID = publishSettings.instance_ID
 	
+	-- local urlcheck, reply_headers = LrHttp.get("https://nodeload.github.com/philbertphotos/Zenphoto-Lightroom-Publisher/legacy.zip/master", nil, 3)
+	--log:trace('urlcheck: '..table_show(reply_headers))
 		--log:trace("F: "..table_show(f))
 		--log:trace("publishSettings: "..table_show(publishSettings))
 		--log:trace("info: "..table_show(info))
@@ -126,11 +128,9 @@ end
 else
 	local bind = import 'LrView'.bind
 	
-
 	local albumlist = ZenphotoAPI.getAlbums(publishSettings, true)
 	log:debug(table_show(albumlist))
 
-	
 	local pubCollection = nil
 	local collectionSettings = assert( info.collectionSettings )
 log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
@@ -141,8 +141,8 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 	if not collectionSettings.parentFolder then
 		collectionSettings.parentFolder = ''
 	end
-	if not collectionSettings.password then
-		collectionSettings.password = nil
+	if not collectionSettings.albumpassword then
+		collectionSettings.albumpassword = ''
 	end
 	
 	if not collectionSettings.location then
@@ -160,6 +160,9 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 	end
 	if not collectionSettings.ratingson then
 		collectionSettings.ratingson = '1'
+	end
+	if not collectionSettings.deepscan then
+		collectionSettings.deepscan = '1'
 	end
 	if not collectionSettings.show then
 		collectionSettings.show = '1'
@@ -196,8 +199,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 									LrTasks.startAsyncTask( function()
 										log:trace("Sync albums dialog")
 										LrFunctionContext.callWithContext('function', function(context)
-
-											exportServiceProvider.sync(false, info.publishService, context)
+											exportServiceProvider.sync(false, info.publishService, context, publishSettings)
 
 										end)
 									end)
@@ -211,7 +213,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 									log:trace("Sync all images dialog")
 										LrFunctionContext.callWithContext('function', function(context)
 
-											exportServiceProvider.sync(true, info.publishService, context)
+											exportServiceProvider.sync(true, info.publishService, context, publishSettings)
 
 										end)
 									end)
@@ -294,11 +296,13 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 							f:static_text {
 								title = "Album Password:",
 								alignment = "right",
+								tooltip = "TODO not operational",
 								width = 100,
 								},
 
 							f:edit_field {
-								value = bind 'password',
+								value = bind 'albumpassword',
+								tooltip = "TODO not operational",
 								width_in_chars = 38,
 								},
 						},
@@ -311,33 +315,35 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 								title = "Album published",
 								checked_value = '1',
 								unchecked_value = '0',
+								tooltip = "published the album on zenphoto",
 								value = bind 'show',
 								},
 							f:checkbox {
 								title = "Allow comments",
 								checked_value = '1',
 								unchecked_value = '0',
+								tooltip = "Allow comments on the album",
 								value = bind 'commentson',
 								},
-							f:checkbox {
+							--[[f:checkbox {
 								title = "Allow ratings",
 								checked_value = '1',
 								unchecked_value = '0',
 								value = bind 'ratingson',
-								},
+								},--]]
 						},
 					},
 					
 					spacing = f:control_spacing(),
 
 					f:group_box {
-						fill_horizontal = 1,
+						fill_horizontal = 0,
 						title = "Sync images from server",
 						size = 'small',
 
 						f:row {
 							f:push_button {
-								fill_horizontal = 1,
+								fill_horizontal = 0,
 								title = 'Sync images',
 								enabled = bind 'syncEnabled',
 								action = function()
@@ -346,6 +352,8 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 												LrFunctionContext.callWithContext('function', function(context)
 
 													prefs.instanceTable[prefs.instanceID].missing[remoteId] = {}
+													--log:info('sync Images (mantianance collection)'..table_show(publishSettings))
+													--log:info('sync remoteId (mantianance collection) '..remoteId)
 													collectionSettings.missing = publishServiceExtention.getImages( pubCollection, remoteId, publishSettings, context)
 													prefs.instanceTable[prefs.instanceID].missing[remoteId] = collectionSettings.missing
 
@@ -355,7 +363,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 								end,
 							},
 
-							f:push_button {
+							--[[f:push_button {
 								fill_horizontal = 1,
 								title = 'Show -not found-',
 								enabled = bind {
@@ -387,7 +395,14 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 										prefs.instanceTable[prefs.instanceID].missing[remoteId] = {}
 									end)
 								end,
-							},
+							},--]]
+							f:checkbox {
+								title = "Detailed scan",
+								checked_value = '1',
+								tooltip = "(more accurate results if you have multiple images with the same name validates filename and capture time.)",
+								unchecked_value = '0',
+								value = bind 'deepscan',
+								},
 						},
 					},
 					
@@ -461,18 +476,23 @@ log:trace("create new collection")
 														parentFolder = info.collectionSettings.parentFolder,
 														 description = info.collectionSettings.description,
 															location = info.collectionSettings.location,
-															password = info.collectionSettings.password,
+															albumpassword = info.collectionSettings.albumpassword,
 																show = info.collectionSettings.show,
 														  commentson = info.collectionSettings.commentson,
-														  ratingson = info.collectionSettings.ratingson,
-														  
+														  --ratingson = info.collectionSettings.ratingson,														  
 													})
-				log:info('editAlbum : '..table_show(err))
-			if password == not nil then
-			albumpassword = info.collectionSettings.password
-			prefs.instanceTable[prefs.instanceID].albumpassword = albumpassword
-					log:trace("album password:"..albumpassword)
-			end
+				log:info('editAlbum Status: '..table_show(status))
+				
+			--if status.albumpassword == not nil then
+		--if prefs.instanceTable[instanceID].remoteId == nil then
+					--log:info("Creating ablum table"..remoteId)
+		--table.insert (prefs.instanceTable,instanceID,remoteId)
+	--end	
+
+			--prefs.instanceTable[instanceID].remoteId.albumpassword = info.collectionSettings.albumpassword
+			--prefs.instanceTable[prefs.instanceID][remoteId] = albumpassword
+					--log:trace("album password:"..info.collectionSettings.albumpassword)
+			--end
 			--	update collection settings
 			--
 			catalog = info.publishService.catalog
@@ -566,7 +586,11 @@ end
 	-- @return (boolean) true to reverse the sequence when publishing new photos
 
 function publishServiceProvider.shouldReverseSequenceForPublishedCollection( publishSettings, collectionInfo )
-	log:trace("publishServiceProvider.shouldReverseSequenceForPublishedCollection")
+	log:trace("publishServiceProvider.shouldReverseSequenceForPublishedCollection n/a")
+	log:debug("shouldReverseSequenceForPublishedCollection: "..table_show(collectionInfo))
+	log:debug("shouldReverseSequenceForPublishedCollection: "..publishSettings.publishConnectionId)
+	publishServiceID = publishConnectionId
+	
 	return collectionInfo.isDefaultCollection
 end
 
@@ -718,6 +742,26 @@ function publishServiceProvider.deletePublishedCollection( publishSettings, info
 
 end
 
+--------------------------------------------------------------------------------
+--- (optional) This plug-in defined callback function is called when the user creates
+ -- a new publish service via the Publish Manager dialog. It allows your plug-in
+ -- to perform additional initialization.
+ -- <p>This is not a blocking call. It is called from within a task created
+ -- using the <a href="LrTasks.html"><code>LrTasks</code></a> namespace. In most
+ -- cases, you should not need to start your own task within this function.</p>
+ -- <p>First supported in version 3.0 of the Lightroom SDK.</p>
+	-- @name publishServiceProvider.didCreateNewPublishService
+	-- @class function
+	-- @param publishSettings (table) The settings for this publish service, as specified
+		-- by the user in the Publish Manager dialog. Any changes that you make in
+		-- this table do not persist beyond the scope of this function call.
+	-- @param info (table) A table with these fields:
+	 -- <ul>
+	  -- <li><b>connectionName</b>: (string) the name of the newly-created service</li>
+	  -- <li><b>publishService</b>: (<a href="LrPublishService.html"><code>LrPublishService</code></a>)
+	  -- 	The publish service object.</li>
+	 -- </ul>
+
 function publishServiceProvider.didCreateNewPublishService( publishSettings, info )
 	local pi = publishSettings.localIdentifier
 	log:trace("didCreateNewPublishService (n/a)"..pi)
@@ -728,7 +772,7 @@ function publishServiceProvider.didCreateNewPublishService( publishSettings, inf
 if prefs.instanceTable[pi] then
  log:trace("instanceId exsits")
  else
-  log:trace("Inserting new instance")
+  log:trace("Inserting new publisher instance")
 				table.insert(prefs.instanceTable,pi,
 					{
 					host = 'wwww.yourzenphotoserver.com',
@@ -740,21 +784,102 @@ if prefs.instanceTable[pi] then
 			end
 end
 
+
+--------------------------------------------------------------------------------
+--- (optional) This plug-in defined callback function is called when the user creates
+ -- a new publish service via the Publish Manager dialog. It allows your plug-in
+ -- to perform additional initialization.
+ -- <p>This is not a blocking call. It is called from within a task created
+ -- using the <a href="LrTasks.html"><code>LrTasks</code></a> namespace. In most
+ -- cases, you should not need to start your own task within this function.</p>
+ -- <p>First supported in version 3.0 of the Lightroom SDK.</p>
+	-- @name publishServiceProvider.didUpdatePublishService
+	-- @class function
+	-- @param publishSettings (table) The settings for this publish service, as specified
+		-- by the user in the Publish Manager dialog. Any changes that you make in
+		-- this table do not persist beyond the scope of this function call.
+	-- @param info (table) A table with these fields:
+	 -- <ul>
+	  -- <li><b>connectionName</b>: (string) the name of the newly-created service</li>
+	  -- <li><b>nPublishedPhotos</b>: (number) how many photos are currently published on the service</li>
+	  -- <li><b>publishService</b>: (<a href="LrPublishService.html"><code>LrPublishService</code></a>)
+	  -- 	The publish service object.</li>
+	  -- <li><b>changedMoreThanName</b>: (boolean) true if any setting other than the name
+	  --  (description) has changed</li>
+	 -- </ul>
+	 
 function publishServiceProvider.didUpdatePublishService( publishSettings, info )
 log:trace("didUpdatePublishService: ")
 	log:debug("didUpdate PublishSettings: ".. table_show(publishSettings))
 	log:debug("didUpdate Info: ".. table_show(info))
 end
 
+--------------------------------------------------------------------------------
+--- (optional) This plug-in defined callback function is called when the user
+ -- has attempted to delete the publish service from Lightroom.
+ -- It provides an opportunity for you to customize the confirmation dialog.
+ -- <p>Do not use this hook to actually tear down the service. Instead, use
+ -- <a href="#publishServiceProvider.willDeletePublishService"><code>willDeletePublishService</code></a>
+ -- for that purpose.
+ -- <p>This is not a blocking call. It is called from within a task created
+ -- using the <a href="LrTasks.html"><code>LrTasks</code></a> namespace. In most
+ -- cases, you should not need to start your own task within this function.</p>
+ -- <p>First supported in version 3.0 of the Lightroom SDK.</p>
+	-- @name publishServiceProvider.shouldDeletePublishService
+	-- @class function
+	-- @param publishSettings (table) The settings for this publish service, as specified
+		-- by the user in the Publish Manager dialog. Any changes that you make in
+		-- this table do not persist beyond the scope of this function call.
+	-- @param info (table) A table with these fields:
+	  -- <ul>
+		-- <li><b>publishService</b>: (<a href="LrPublishService.html"><code>LrPublishService</code></a>)
+		-- 	The publish service object.</li>
+		-- <li><b>nPhotos</b>: (number) The number of photos contained in
+		-- 	published collections within this service.</li>
+		-- <li><b>connectionName</b>: (string) The name assigned to this publish service connection by the user.</li>
+	  -- </ul>
+	-- @return (string) 'cancel', 'delete', or nil (to allow Lightroom's default
+		-- dialog to be shown instead)--]]
+		
 function publishServiceProvider.shouldDeletePublishService( publishSettings, info )
-	log:trace("publishServiceProvider.shouldDeletePublishService (n/a)")
+	log:trace("publishServiceProvider.shouldDeletePublishService")
+	--Lets cleanup published instance.
+	--LrDialogs.message('Attempt to clean up instance')
+	--return cancel
 end
+
+--------------------------------------------------------------------------------
+--- (optional) This plug-in defined callback function is called when the user
+ -- has confirmed the deletion of the publish service from Lightroom.
+ -- It provides a final opportunity for	you to remove private data
+ -- immediately before the publish service is removed from the Lightroom catalog.
+ -- <p>Do not use this hook to present user interface (aside from progress,
+ -- if the operation will take a long time). Instead, use 
+ -- <a href="#publishServiceProvider.shouldDeletePublishService"><code>shouldDeletePublishService</code></a>
+ -- for that purpose.
+ -- <p>This is not a blocking call. It is called from within a task created
+ -- using the <a href="LrTasks.html"><code>LrTasks</code></a> namespace. In most
+ -- cases, you should not need to start your own task within this function.</p>
+ -- <p>First supported in version 3.0 of the Lightroom SDK.</p>
+	-- @name publishServiceProvider.willDeletePublishService
+	-- @class function
+	-- @param publishSettings (table) The settings for this publish service, as specified
+		-- by the user in the Publish Manager dialog. Any changes that you make in
+		-- this table do not persist beyond the scope of this function call.
+	-- @param info (table) A table with these fields:
+	 -- <ul>
+		-- <li><b>publishService</b>: (<a href="LrPublishService.html"><code>LrPublishService</code></a>)
+		-- 	The publish service object.</li>
+		-- <li><b>nPhotos</b>: (number) The number of photos contained in
+		-- 	published collections within this service.</li>
+		-- <li><b>connectionName</b>: (string) The name assigned to this publish service connection by the user.</li>
+	-- </ul> --]]
 
 function publishServiceProvider.willDeletePublishService( publishSettings, info )
 	log:trace("publishServiceProvider.willDeletePublishService (n/a)")
-		local pi = publishSettings.localIdentifier
+		local pi = publishSettings.instance_id
 	table.remove(prefs.instanceTable, pi)
-	log:trace("removed:"..pi)
+	log:debug("removed the published instance :"..pi)
 	
 	local publishService = info.publishService
 
@@ -762,9 +887,7 @@ function publishServiceProvider.willDeletePublishService( publishSettings, info 
 	for _, photo in ipairs( publishedPhotos ) do
 		photo:setPropertyForPlugin( _PLUGIN, "uploaded", nil )
 		photo:setPropertyForPlugin( _PLUGIN, "albumurl", nil )
-	end
-	
-	
+	end	
 end
 
 function publishServiceProvider.shouldDeletePhotosFromServiceOnDeleteFromCatalog( publishSettings, nPhotos )
