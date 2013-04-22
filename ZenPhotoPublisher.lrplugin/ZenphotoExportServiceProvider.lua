@@ -411,6 +411,8 @@ end
 
 function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
 	log:trace('exportServiceProvider.processRenderedPhotos')
+--set publisher instance_ID
+	publishServiceID = exportContext.propertyTable.instance_ID
 	-- Check for photos that have been uploaded already.
 	local exportSession = exportContext.exportSession
 
