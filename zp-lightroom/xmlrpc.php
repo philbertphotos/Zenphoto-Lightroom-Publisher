@@ -21,6 +21,7 @@ $server = new IXR_Server(array(
     'zenphoto.image.upload' => 'upload',
     'zenphoto.image.uploadXML' => 'uploadXML',
     'zenphoto.get.comments' => 'getImageComments',
+    //'zenphoto.json.comments' => 'jsonComments',
     'zenphoto.get.ratings' => 'getImageRatings',
     'zenphoto.add.comment' => 'addImageComments'
 ));
@@ -265,6 +266,10 @@ function getAlbumList($args)
                 'name' => $album->getTitle(),
                 'id' => $album->getFolder()
             ));
+			
+    //debuglog ('simplelist');    
+    //debuglog (var_export($list, true));
+
         else
             $list[] = entitysave(array(
                 'id' => $album->getID(),
@@ -279,6 +284,7 @@ function getAlbumList($args)
                 'commentson' => $album->getCommentsAllowed()
             ));
     } 
+		    logger('simplelist'.var_export($list, true), ($args['loglevel']));
     return $list;
 }
 /**
@@ -349,6 +355,37 @@ function getImageComments($args)
     } //$i = 0; $i < count($comments); ++$i
     return $commentList;
 }
+
+/**function jsonComments($args)
+{
+    global $_zp_current_image;
+    //$v = var_export($args, true);
+    //debuglog ('getImageComments');    
+    //debuglog ($v);
+    if (is_object($login_state = authorize($args)))
+        return $login_state;
+    $args = decode64($args);
+    logger('getImageComments', ($args['loglevel']));
+    $imageobject = getItemByID("images", $args['id']);
+    if ($imageobject->filename)
+        $jsontest = $imageobject->getmetadata();
+    else
+        //return new IXR_Error(-1, 'Image not found on server ' . $obj['filename']);
+
+ for ($i = 0; $i < count($comments); ++$i) {
+        $x             = $i + 1;
+        $commentList[] = entitysave(array(
+            'commentData' => $comments[$i]["comment"],
+            'commentId' => $comments[$i]["id"],
+            'commentDate' => strtotime(str_replace(".000000", "", $comments[$i]["date"])),
+            'commentUsername' => $comments[$i]["email"],
+            'commentRealname' => $comments[$i]["name"],
+            'commentUrl' => $args["url"] . "#zp_comment_id_" . $x
+        ));
+    } //$i = 0; $i < count($comments); ++$i
+    return $jsontest;
+}**/
+
 /**
  *
  *    add comments to image.
@@ -543,7 +580,7 @@ function changeAlbum($args)
     $album->setTitle($args['name']);
     $album->setDesc(nl2br($args['description']));
     $album->setLocation($args['location']);
-    $album->setPassword($_zp_authority->passwordHash($args['albumpassword']));
+    //$album->setPassword($_zp_authority->passwordHash($args['albumpassword']));
     $album->setShow($args['show']);
     $album->setCommentsAllowed($args['commentson']);
     $album->save();
