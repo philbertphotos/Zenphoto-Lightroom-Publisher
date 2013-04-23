@@ -156,7 +156,7 @@ Zenphoto features support for images, video and audio formats, and the Zenpage C
 	
 		<div class="sixteen columns titleset">
 		<section id="downloads" class="clearfix">
-		<h4>Newest version is 4.0.1</h4>
+		<h4>Newest version is 4.0.1.20130423</h4>
 <a href="https://github.com/philbertphotos/Zenphoto-Lightroom-Publisher/archive/4.0.1.zip" id="download-zip" class="button"><span>Download .zip</span></a>
     	
 		<div class="sixteen columns titleset">
@@ -227,10 +227,24 @@ webservice directory – “/zp/plugins/zp-lightroom”
 		
 		<div class="two-thirds column">
 		
-<h2> MAJOR UPDATE AND FIXES 4.0.1</h2>
+<h2> MAJOR UPDATE AND FIXES 4.0.1.20130423</h2>
 
 <p>Added the ability to sync comments and ratings from Zenphoto system (cant add comments yet maybe in 4.0.2)
 Fix tons of problems and little quirks.</p>
+date Version = ff77e4d
+<p>This build corrects some bugs I introduced in the 4.0.1 build in my
+eagerness to get certain new features out ...this has been fixed and I
+have gone over a new procedure of testing EVERYTHING (each procedure)
+before releasing a development build.
+One major accomplishment was retooling the XMLRPC plugin service for
+better/deeper  integration with Zenphoto and fixed a long time problem
+with the image sync logic ..</p>
+It now versify's both the filename and the date of the capture that is
+embedded in the EXIF data. This "will" end the issue where the default
+filenames such as IMG_001 in another folder in you lightroom library
+some where will not be used unless the date matches .
+(This has been  big problem for me personally)
+Other small enhancements and corrections (more debug code too)
 <span>
 Add more debug and logging info this should help find those bugs.
 Fully supported instances of Zenphoto publisher plugin, why because some of us have more than install of ZP and would like to manage them all..
