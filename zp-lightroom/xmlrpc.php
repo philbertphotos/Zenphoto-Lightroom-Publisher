@@ -21,7 +21,7 @@ $server = new IXR_Server(array(
     'zenphoto.image.upload' => 'upload',
     'zenphoto.image.uploadXML' => 'uploadXML',
     'zenphoto.get.comments' => 'getImageComments',
-    //'zenphoto.json.comments' => 'jsonComments',
+	'zenphoto.album.thumnail' => 'getthumbnail',
     'zenphoto.get.ratings' => 'getImageRatings',
     'zenphoto.add.comment' => 'addImageComments'
 ));
@@ -60,7 +60,7 @@ function entitysave($list)
     $tmp = array();
     if (is_array($list))
         foreach ($list as $key => $value)
-            $tmp[$key] = new IXR_Base64(html_entity_decode($value, ENT_NOQUOTES, 'ISO8859-1'));
+            $tmp[$key] = new IXR_Base64(html_entity_decode($value, ENT_NOQUOTES, 'utf-8'));
     //$tmp[$key] = new IXR_Base64(html_entity_decode($value));
     return $tmp;
 }
@@ -172,11 +172,12 @@ function encode_items($array)
             $array[$key] = encode_items($value);
         } //is_array($value)
         else {
-            $array[$key] = mb_convert_encoding($value, 'ISO-8859-1');
+            $array[$key] = mb_convert_encoding($value, 'utf-8');
         }
     } //$array as $key => $value
     return $array;
 }
+
 function logger($string, $loglevel)
 {
     switch ($loglevel) {
@@ -284,7 +285,6 @@ function getAlbumList($args)
                 'commentson' => $album->getCommentsAllowed()
             ));
     } 
-		    logger('simplelist'.var_export($list, true), ($args['loglevel']));
     return $list;
 }
 /**
@@ -341,7 +341,7 @@ function getImageComments($args)
     if ($imageobject->filename)
         $comments = $imageobject->getComments();
     else
-        return new IXR_Error(-1, 'Image not found on server ' . $obj['filename']);
+        return new IXR_Error(-1, 'Image not found on server');
     for ($i = 0; $i < count($comments); ++$i) {
         $x             = $i + 1;
         $commentList[] = entitysave(array(
@@ -352,40 +352,12 @@ function getImageComments($args)
             'commentRealname' => $comments[$i]["name"],
             'commentUrl' => $args["url"] . "#zp_comment_id_" . $x
         ));
-    } //$i = 0; $i < count($comments); ++$i
+    } 
+	if (empty($commentList))
+	return '';
+	else
     return $commentList;
 }
-
-/**function jsonComments($args)
-{
-    global $_zp_current_image;
-    //$v = var_export($args, true);
-    //debuglog ('getImageComments');    
-    //debuglog ($v);
-    if (is_object($login_state = authorize($args)))
-        return $login_state;
-    $args = decode64($args);
-    logger('getImageComments', ($args['loglevel']));
-    $imageobject = getItemByID("images", $args['id']);
-    if ($imageobject->filename)
-        $jsontest = $imageobject->getmetadata();
-    else
-        //return new IXR_Error(-1, 'Image not found on server ' . $obj['filename']);
-
- for ($i = 0; $i < count($comments); ++$i) {
-        $x             = $i + 1;
-        $commentList[] = entitysave(array(
-            'commentData' => $comments[$i]["comment"],
-            'commentId' => $comments[$i]["id"],
-            'commentDate' => strtotime(str_replace(".000000", "", $comments[$i]["date"])),
-            'commentUsername' => $comments[$i]["email"],
-            'commentRealname' => $comments[$i]["name"],
-            'commentUrl' => $args["url"] . "#zp_comment_id_" . $x
-        ));
-    } //$i = 0; $i < count($comments); ++$i
-    return $jsontest;
-}**/
-
 /**
  *
  *    add comments to image.
@@ -423,7 +395,7 @@ function getImageRatings($args)
     if (!$imageobject)
         $rating = getRating($imageobject);
     else
-        return new IXR_Error(-1, 'Image not found on server ' . $obj['filename']);
+        return new IXR_Error(-1, 'No image ratings' );
     return $rating;
 }
 /**
