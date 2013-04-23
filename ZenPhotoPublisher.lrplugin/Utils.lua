@@ -31,20 +31,7 @@ Utils = {}
 			return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
 		end
 	end
-	--
-	--
-	--	XML fix - remove leading and tailing spaces
-	--
-	--
-function xmlfix(str, x)
-if (str ~= nil) then
-if string.find(str, '</'..x..'e>')  then
-return str
-else
-return string.gsub(str, '</'..x, '</'..x..'e>')
-end
-end
-end
+
 	--
 	--
 	--	split string
@@ -79,7 +66,9 @@ function decode64(value)
 	if type(value) == 'table' then
 		for k,v in pairs(value) do
 			if type(v) == 'table' then
+			log:debug('before decode: '..table_show(value[k]))
 				value[k] = decode64(v)
+				log:debug('after decode: '..table_show(value[k]))
 			else
 				value[k] = LrStringUtils.decodeBase64(v)
 			end
@@ -344,7 +333,7 @@ end
 	--	print table dump
 	--
 	
-function table_show (tt, indent, done)
+--[[function table_show (tt, indent, done)
   done = done or {}
   indent = indent or 0
   if type(tt) == "table" then
@@ -367,7 +356,7 @@ function table_show (tt, indent, done)
   else
     return tostring(tt .. "\n")
   end
-end
+end--]]
 
 	--
 -- table dump

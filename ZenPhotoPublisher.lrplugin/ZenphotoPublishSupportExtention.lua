@@ -112,7 +112,7 @@ syncphoto = syncimage()
 				--log:info("+ photodate - adjust RAW: " .. photo:getRawMetadata( 'dateTime' ))
 				--log:info("+ photodateRAW: " .. syncphoto:getRawMetadata( 'dateTimeOriginal' ))
 				--log:info("publishedCollection:addPhotoByRemoteId: " .. tostring(syncphoto), image.name, image.id, image.longdate)
-				publishedCollection:addPhotoByRemoteId( syncphoto, image.longdate..image.id, image.id, image.url, true )
+				publishedCollection:addPhotoByRemoteId( syncphoto, image.id, image.url, true )
 				log:info('--END--\n\n')
 			end)
 		else

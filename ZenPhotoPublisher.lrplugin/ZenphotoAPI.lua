@@ -9,11 +9,11 @@ local LrFunctionContext = import 'LrFunctionContext'
 local LrHttp 			= import 'LrHttp'
 local LrMD5 			= import 'LrMD5'
 local LrPathUtils 		= import 'LrPathUtils'
+local LrPath			= import 'LrPathUtils'
 local LrXml 			= import 'LrXml'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
 
 --============================================================================--
-
 ZenphotoAPI = {}
 
 --------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ end
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.getImageComments(id, propertyTable)	
-	log:info('ZenphotoAPI.Getimagecomments: '..table_show(getImageComments))
+	log:info('ZenphotoAPI.Getimagecomments')
 
 	local zenphotoURLroot = 'http://'..prefs.instanceTable[publishServiceID].host..'/'
 local paramMap = initRequestParams()
@@ -167,7 +167,18 @@ local paramMap = initRequestParams()
 	log:debug('getImageComments:'..xmlResponse)
 	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
 end
+---------------------------------------------------------------------------------
+function ZenphotoAPI.getAlbumthumbnail(id, propertyTable)	
+	log:info('ZenphotoAPI.getAlbumthumbnail: '..table_show(getImageComments))
 
+	local zenphotoURLroot = 'http://'..prefs.instanceTable[publishServiceID].host..'/'
+local paramMap = initRequestParams()
+		table.insert( paramMap, { paramName = 'id', paramType = 'string', paramValue = id.remoteId } )
+	local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.get.thumbnail', paramMap, true )
+	log:debug('getImageComments.paramMap '..table_show(paramMap))
+	log:debug('getImageComments:'..xmlResponse)
+	return ZenphotoAPI.getTableFromXML(xmlResponse, false, false)	
+end
 ---------------------------------------------------------------------------------
 function ZenphotoAPI.addComment( propertyTable, params )
 log:info('ZenphotoAPI.addComment '..table_show(params))
@@ -329,7 +340,8 @@ log:trace( 'ZenphotoAPI.getTableFromXML Main' )
 	
 	local luaTableFunction = luaTableString and loadstring( luaTableString )
 	local _, resultTable = LrFunctionContext.pcallWithEmptyEnvironment( luaTableFunction )
-	
+	--log:debug("Debug getTableFromXML.resultTable: "..table_show(resultTable))
+		--log:debug("Debug getTableFromXML.resultTable: "..table_show(decode64(resultTable)))
 	if resultTable and #resultTable == 1 and allowSingleEntry == true then
 		return decode64(resultTable[1])
 	else
@@ -478,7 +490,7 @@ function ZenphotoAPI.sendXMLRequest( methodName, params )
 	-- build headers
 	local headers = {}
 	table.insert( headers, { field = 'User-Agent', value = 'Adobe Photoshop Lightroom Zenphoto Publish Plugin' } )
-	table.insert( headers, { field = 'Content-Type', value = 'text/xml; charset=ISO-8859-1' } )
+	table.insert( headers, { field = 'Content-Type', value = 'text/xml; charset=utf-8' } )
 	table.insert( headers, { field = 'Content-length', value = trim(tostring( #xmlString) ) } )
 	
 	zenphotoHost = prefs.instanceTable[publishServiceID].host
@@ -487,9 +499,8 @@ function ZenphotoAPI.sendXMLRequest( methodName, params )
 	-- send request
 	table.insert( headers, { field = 'Host', value = zenphotoHost} )
 	local responseXML, responseHeaders = LrHttp.post( zenphotoURL, xmlString, headers, 'POST' )	
-	--log:debug('headers: '..responseXML, table_show(responseHeaders))	
-	local responseXML = xmlfix(responseXML,"methodRespons") 
-	--log:debug("ZenphotoAPI.sendXML-RequestresponseXML: "..responseXML)
+	log:debug('headers: '..responseXML, table_show(responseHeaders))
+	
 	return responseXML
 end
 

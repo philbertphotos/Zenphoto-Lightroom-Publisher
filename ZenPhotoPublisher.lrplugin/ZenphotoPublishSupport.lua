@@ -78,7 +78,7 @@ function publishServiceProvider.goToPublishedCollection( publishSettings, info )
 if info.name == "Sync Albums/Images" then
 LrDialogs.message( "You can not delete this collection" )
 elseif info.remoteUrl then
-		LrHttp.openUrlInBrowser( 'http://' .. prefs.instanceTable[prefs.instanceID].host .."/".. info.remoteUrl )
+		LrHttp.openUrlInBrowser( 'http://' .. prefs.instanceTable[publishSettings.instance_ID].host .."/".. info.remoteUrl )
 end
 end
 
@@ -88,8 +88,10 @@ end
 	 
 function publishServiceProvider.goToPublishedPhoto( publishSettings, info )
 	log:trace("publishServiceProvider.goToPublishedPhoto")
+	log:trace("goToPublishedPhoto.info: "..table_show(info))
+	log:trace("goToPublishedPhoto.info: "..table_show(publishSettings))
 	if info.remoteUrl then
-		LrHttp.openUrlInBrowser( 'http://' .. prefs.instanceTable[prefs.instanceID].host .."/"..info.remoteUrl )
+		LrHttp.openUrlInBrowser( 'http://' .. prefs.instanceTable[publishSettings.instance_ID].host .."/"..info.remoteUrl )
 	end
 end
 
@@ -129,7 +131,7 @@ else
 	local bind = import 'LrView'.bind
 	
 	local albumlist = ZenphotoAPI.getAlbums(publishSettings, true)
-	log:debug(table_show(albumlist))
+	log:debug('viewForCollectionSettings.albumlist: '..table_show(albumlist))
 
 	local pubCollection = nil
 	local collectionSettings = assert( info.collectionSettings )
@@ -362,6 +364,11 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 											
 								end,
 							},
+							--[[f:push_button {
+								fill_horizontal = 1,
+								title = 'json test',
+								action = ZenphotoAPI.jsontest (remoteID, publishsettings),
+							},--]]
 
 							--[[f:push_button {
 								fill_horizontal = 1,
@@ -587,10 +594,6 @@ end
 
 function publishServiceProvider.shouldReverseSequenceForPublishedCollection( publishSettings, collectionInfo )
 	log:trace("publishServiceProvider.shouldReverseSequenceForPublishedCollection n/a")
-	log:debug("shouldReverseSequenceForPublishedCollection: "..table_show(collectionInfo))
-	log:debug("shouldReverseSequenceForPublishedCollection: "..publishSettings.publishConnectionId)
-	publishServiceID = publishConnectionId
-	
 	return collectionInfo.isDefaultCollection
 end
 
@@ -784,7 +787,6 @@ if prefs.instanceTable[pi] then
 			end
 end
 
-
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when the user creates
  -- a new publish service via the Publish Manager dialog. It allows your plug-in
@@ -876,18 +878,18 @@ end
 	-- </ul> --]]
 
 function publishServiceProvider.willDeletePublishService( publishSettings, info )
-	log:trace("publishServiceProvider.willDeletePublishService (n/a)")
-		local pi = publishSettings.instance_id
-	table.remove(prefs.instanceTable, pi)
-	log:debug("removed the published instance :"..pi)
+	log:trace("publishServiceProvider.willDeletePublishService")
+		local pi = publishSettings.instance_ID
+	table.remove(prefs.instanceTable,pi)
+	log:trace("DeletePublishService.removed the published instance :"..pi)
 	
 	local publishService = info.publishService
-
 	local publishedPhotos = publishService.catalog:findPhotosWithProperty( "org.zenphoto.lightroom.publisher", "photoId" )
 	for _, photo in ipairs( publishedPhotos ) do
 		photo:setPropertyForPlugin( _PLUGIN, "uploaded", nil )
 		photo:setPropertyForPlugin( _PLUGIN, "albumurl", nil )
 	end	
+		log:trace("DeletePublishService.removed custom metadata")
 end
 
 function publishServiceProvider.shouldDeletePhotosFromServiceOnDeleteFromCatalog( publishSettings, nPhotos )
@@ -943,10 +945,8 @@ function publishServiceProvider.getCommentsFromPublishedCollection( publishSetti
 		end	
 		--log:info('commentliststart: ' ..table_show(commentList))
 		commentCallback{ publishedPhoto = photoInfo, comments = commentList }		
-	end
-			
+	end	
 end
-
 
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called whenever a
