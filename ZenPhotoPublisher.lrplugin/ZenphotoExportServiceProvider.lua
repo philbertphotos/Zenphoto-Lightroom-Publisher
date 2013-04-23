@@ -173,7 +173,19 @@ log:info('--START LOG--')
 					immediate = true,
 				},
 			},
-
+f:group_box {			
+	title = "User Login",
+	fill_horizontal = 1,
+f:row {
+	spacing = f:label_spacing(),
+				f:picture {
+					value = _PLUGIN:resourceId('zenphoto_album.png'),
+					},
+	f:column {
+	spacing = f:control_spacing(),
+	fill_horizontal = 1,
+	f:group_box {
+		fill_horizontal = 1,
 			f:row {
 				f:static_text {
 					fill_horizontal = 1,
@@ -215,7 +227,10 @@ log:info('--START LOG--')
 					size = 'small'
 				},
 			},
-
+},
+},
+},
+},
 			f:row {
 				margin_top = 10,
 
