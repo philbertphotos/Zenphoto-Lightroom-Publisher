@@ -310,10 +310,7 @@ function getAlbumImages($args)
 	//logger($images[1]->getmetadata()['EXIFDateTimeOriginal'],($args['loglevel']));
     $list = array();
     while (next_image(true))
-	//$test = $_zp_current_image->getID();
-		//$meta1 = $_zp_current_image->getmetadata();
 		$imagemetadata = $_zp_current_image->getmetadata();
-		//$imagemetadata['EXIFDateTimeOriginal'];
         $list[] = entitysave(array(
             'id' => $_zp_current_image->getID(),
             'name' => $_zp_current_image->filename,
@@ -553,7 +550,6 @@ function createAlbum($args)
  **/
 function changeAlbum($args)
 {
-    debuglog('fuction-changeAlbum');
     global $_zp_current_album, $_zp_authority;
     if (is_object($login_state = authorize($args)))
         return $login_state;
@@ -579,8 +575,9 @@ function changeAlbum($args)
     //    rename action
     //
     $newfolder = $args['parentFolder'] ? $args['parentFolder'] . '/' . $args['folder'] : $args['folder'];
-    if ($newfolder && $album->name != $newfolder) {
-        $result = $album->moveAlbum($newfolder);
+    if ($newfolder && $albumobject->name != $newfolder) {
+	    logger('changeAlbum.rename action', ($args['loglevel']));
+        $result = $albumobject->rename($newfolder);
         switch ($result) {
             case '1':
                 return new IXR_Error(-5, 'General change folder error!');
