@@ -21,7 +21,7 @@ $server = new IXR_Server(array(
     'zenphoto.image.upload' => 'upload',
     'zenphoto.image.uploadXML' => 'uploadXML',
     'zenphoto.get.comments' => 'getImageComments',
-	'zenphoto.album.thumnail' => 'getthumbnail',
+    'zenphoto.get.thumbnail' => 'getAlbumThumbnail',
     'zenphoto.get.ratings' => 'getImageRatings',
     'zenphoto.add.comment' => 'addImageComments'
 ));
@@ -312,12 +312,13 @@ function getAlbumImages($args)
     while (next_image(true))
 	//$test = $_zp_current_image->getID();
 		//$meta1 = $_zp_current_image->getmetadata();
-		//$imagedate = $meta['EXIFDateTimeOriginal'];
+		$imagemetadata = $_zp_current_image->getmetadata();
+		//$imagemetadata['EXIFDateTimeOriginal'];
         $list[] = entitysave(array(
             'id' => $_zp_current_image->getID(),
             'name' => $_zp_current_image->filename,
-			'shortdate' => date("Y-m-d",(strtotime(str_replace(" ","",(str_replace(":", "",$_zp_current_image->getmetadata()['EXIFDateTimeOriginal'])))))),
-			'longdate' => date("n/d/Y g:i:s A",(strtotime(str_replace(" ","",(str_replace(":", "",$_zp_current_image->getmetadata()['EXIFDateTimeOriginal'])))))),
+			'shortdate' => date("Y-m-d",(strtotime(str_replace(" ","",(str_replace(":", "",$imagemetadata['EXIFDateTimeOriginal'])))))),
+			'longdate' => date("n/d/Y g:i:s A",(strtotime(str_replace(" ","",(str_replace(":", "",$imagemetadata['EXIFDateTimeOriginal'])))))),
             'url' => WEBPATH . 'index.php?album=' . urlencode($_zp_current_image->album->name) . '&image=' . urlencode($_zp_current_image->filename)
         ));
     return $list;
@@ -397,6 +398,24 @@ function getImageRatings($args)
     else
         return new IXR_Error(-1, 'No image ratings' );
     return $rating;
+}
+/**
+ *
+ *    get album thumbnail.
+ *
+ **/
+function getAlbumThumbnail($args)
+{
+    global $_zp_current_album;
+    if (is_object($login_state = authorize($args)))
+        return $login_state;
+    $args = decode64($args);
+    logger('getAlbumThumbnail', ($args['loglevel']));
+	$albumobject = getItemByID("albums", $args['id']);
+	
+	$albumthumb = $albumobject->getAlbumThumbImage();
+//echo "<img src=\"".WEBPATH."/".ZENFOLDER."/i.php?a=".$albumthumb->name."&i=".$albumthumb->name."&s=75&cw=75&ch=75\"></a>\n<br />"; TODO
+    return $albumthumb;
 }
 /**
  *
