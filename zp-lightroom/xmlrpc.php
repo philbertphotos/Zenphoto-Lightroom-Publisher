@@ -572,12 +572,12 @@ function changeAlbum($args)
     $album->setCommentsAllowed($args['commentson']);
     $album->save();
     //
-    //    rename action
+    //    rename/move action
     //
     $newfolder = $args['parentFolder'] ? $args['parentFolder'] . '/' . $args['folder'] : $args['folder'];
     if ($newfolder && $albumobject->name != $newfolder) {
 	    logger('changeAlbum.rename action', ($args['loglevel']));
-        $result = $albumobject->rename($newfolder);
+        $result = $albumobject->move($newfolder);
         switch ($result) {
             case '1':
                 return new IXR_Error(-5, 'General change folder error!');
