@@ -318,8 +318,6 @@ function getAlbumImages($args)
     if (!($albumobject || !$args['id']))
         return new IXR_Error(-1, 'No folder with database ID ' . $args['id'] . ' found!');
 	makeAlbumCurrent($albumobject);	
-	
-	//logger($images[1]->getmetadata()['EXIFDateTimeOriginal'],($args['loglevel']));
     $list = array();
     while (next_image(true)) {
 $meta = $_zp_current_image->getmetadata();
@@ -332,6 +330,7 @@ $imagedate = $meta['EXIFDateTimeOriginal'];
             'url' => WEBPATH . 'index.php?album=' . urlencode($_zp_current_image->album->name) . '&image=' . urlencode($_zp_current_image->filename)
         ));
 		}
+		//writelog((var_export($list, true)));
     return $list;
 }
 /**
