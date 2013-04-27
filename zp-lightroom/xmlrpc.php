@@ -1,4 +1,5 @@
  <?php
+ error_reporting(E_ERROR | E_PARSE);
 //
 //    make sure that the WEBPATH is set to parent directory for correct URL values
 //4.0.1
@@ -30,6 +31,17 @@ $server = new IXR_Server(array(
  *        General Helper functions
  *
  **/
+ 
+  function writelog($str)
+{
+//$myFile = "xmlrpc.log";
+$filename = 'xmlrpc.log';
+$handle = fopen($filename,"x+");
+fwrite($handle,print_r($str, true));
+//debuglog("File written");
+fclose($handle);
+} 
+
 function getFolderNode($foldername)
 {
     return strrpos($foldername, '/') ? substr(strrchr($foldername, "/"), 1) : $foldername;
@@ -285,6 +297,7 @@ function getAlbumList($args)
                 'commentson' => $album->getCommentsAllowed()
             ));
     } 
+			writelog($list);
     return $list;
 }
 /**
@@ -295,7 +308,6 @@ function getAlbumList($args)
 
 function getAlbumImages($args)
 {
-
     global $_zp_current_image;
     if (is_object($login_state = authorize($args)))
         return $login_state;
@@ -309,15 +321,17 @@ function getAlbumImages($args)
 	
 	//logger($images[1]->getmetadata()['EXIFDateTimeOriginal'],($args['loglevel']));
     $list = array();
-    while (next_image(true))
-		$imagemetadata = $_zp_current_image->getmetadata();
+    while (next_image(true)) {
+$meta = $_zp_current_image->getmetadata();
+$imagedate = $meta['EXIFDateTimeOriginal'];
         $list[] = entitysave(array(
             'id' => $_zp_current_image->getID(),
             'name' => $_zp_current_image->filename,
-			'shortdate' => date("Y-m-d",(strtotime(str_replace(" ","",(str_replace(":", "",$imagemetadata['EXIFDateTimeOriginal'])))))),
-			'longdate' => date("n/d/Y g:i:s A",(strtotime(str_replace(" ","",(str_replace(":", "",$imagemetadata['EXIFDateTimeOriginal'])))))),
+			'shortdate' => date("Y-m-d",(strtotime(str_replace(" ","",(str_replace(":", "",$imagedate)))))),
+			'longdate' => date("n/d/Y g:i:s A",(strtotime(str_replace(" ","",(str_replace(":", "",$imagedate)))))),
             'url' => WEBPATH . 'index.php?album=' . urlencode($_zp_current_image->album->name) . '&image=' . urlencode($_zp_current_image->filename)
         ));
+		}
     return $list;
 }
 /**
