@@ -119,6 +119,7 @@ syncphoto = syncimage()
 			log:info("- photo: " .. imagename.." - "..imagesdate)
 			log:info("add to missing table TODO".. publishServiceID)
 			--table.insert(prefs.instanceTable[publishServiceID].missing, imagename)
+			table.insert(prefs.instanceTable[publishServiceID].missing[remoteId], imagename)
 		end
 	end
 	log:info('reading images from server...done')

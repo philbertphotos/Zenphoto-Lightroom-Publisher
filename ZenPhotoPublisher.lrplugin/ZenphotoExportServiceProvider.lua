@@ -228,6 +228,47 @@ f:row {
 				},
 			},
 },
+		
+--[[			f:row {
+				margin_top = 20,
+				f:static_text {
+					fill_horizontal = 1,
+					title = 'Sync albums from server',
+				},
+
+				f:push_button {
+					title = 'Sync albums',
+					width = share 'button_width',
+												action = function()
+									LrTasks.startAsyncTask( function()
+											exportServiceProvider.sync(false, context)
+									end)
+							end,
+				},
+			},
+
+			f:row {
+				f:static_text {
+					fill_horizontal = 1,
+					title = 'Full sync of albums and images from server',
+				},
+
+				f:push_button {
+					title = 'Full sync',
+					width = share 'button_width',
+						action = function()
+									LrTasks.startAsyncTask( function()
+									log:trace("Sync all images dialog")
+										LrFunctionContext.callWithContext('function', function(context)
+
+											exportServiceProvider.sync(true, propertyTable, context, publishSettings)
+
+										end)
+									end)
+							end,
+				},
+			},--]]
+
 },
 },
 },
@@ -238,7 +279,7 @@ f:row {
 					fill_horizontal = 1,
 					height_in_lines = 9,
 					width = 70,
-					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Sync Albums/Images". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. Please click now the "Sync albums" or "Sync all images" button for the initial sync with your Zenphoto server and Lightroom.\n\nFurther details and instructions can be found on http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher.',
+					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Sync Albums/Images". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. \n\nFurther details and instructions can be found on http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher.',
 				},
 			},
 			
@@ -364,8 +405,8 @@ log:trace('exportServiceProvider.sync')
 			if remoteId and pubCollection:getName() ~= 'Sync Albums/Images' then
 				LrFunctionContext.callWithContext('sync Images', function(context)
 					result = publishServiceExtention.getImages( pubCollection, remoteId, publishService, context)
-	--				prefs.instanceTable[instanceID].missing[remoteId] = result
-	--				missing = Utils.joinTables(missing, result)
+					prefs.instanceTable[instanceID].missing[remoteId] = result
+					missing = Utils.joinTables(missing, result)
 				end)
 			end
 		end

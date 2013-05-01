@@ -210,6 +210,20 @@ local paramMap = initRequestParams()
 	return ZenphotoAPI.getSingleValueXML(xmlResponse)
 end 
 
+---------------------------------------------------------------------------------
+function ZenphotoAPI.getVersion(propertyTable)
+log:info('ZenphotoAPI.getVersion'.. table_show(propertyTable))
+
+--local paramMap = initRequestParams()
+	local paramMap = {}
+		--table.insert( paramMap, { paramName = 'id', paramType = 'string', paramValue = '1' } ) 
+		local xmlResponse = ZenphotoAPI.sendXMLRequest( 'zenphoto.get.version', paramMap, true )
+		
+		--log:debug('getRating paramMap : '..table_show(paramMap))
+		log:debug('getVersion:'..xmlResponse)	
+	return ZenphotoAPI.getSingleValueXML(xmlResponse)
+end 
+
 --------------------------------------------------------------------------------
 
 function ZenphotoAPI.deletePhoto(propertyTable, params)

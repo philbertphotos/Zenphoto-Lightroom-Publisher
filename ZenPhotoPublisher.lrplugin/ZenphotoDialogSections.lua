@@ -137,7 +137,7 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 			f:static_text {
 				fill_horizontal = 1,
 				font = "<system/small/bold>",
-				title = 'Welcome to ZenPhoto Publisher for Lightroom 3 and 4 ' .. versionString,
+				title = 'Welcome to ZenPhoto Publisher for Lightroom 3 and 4 \n' .."Version: ".. versionString,
 			},
 			f:column {
 			spacing = 0,
@@ -190,27 +190,38 @@ function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
 			},
 				f:static_text {
 					fill_horizontal = 1,
-					height_in_lines = 2,
+					height_in_lines = 1,
 					width = 300,
-					title = 'This publishing service allows you to sync your ZenPhoto gallery installed somewhere in the web with your Lightroom catalog. Please go to the publishing section, add this service and configure it as explained.',
+					title = 'Gives you the ablity to sync your ZenPhoto gallery with lightroom \n Please use the Issue Tracker link below for any problems you run into.',
 				},
-				f:static_text {
-					fill_horizontal = 1,
-					height_in_lines = 2,
-					width = 300,
-					title = 'Please use the Issue Tracker link above for any problems you run into.',
-				},		
+					f:static_text { 
+					title = 'Issue Tracker', 
+					text_color = import 'LrColor'( 0, 0, 1 ),
+					mouse_down = function(self) 
+						local LrHttp = import 'LrHttp' 
+						LrHttp.openUrlInBrowser('https://github.com/philbertphotos/Zenphoto-Lightroom-Publisher/issues?state=open') 
+					end,
+					[ WIN_ENV and 'adjustCursor' or 'adjust_cursor' ] = function(self)
+						self.text_color = import 'LrColor'( 1, 0, 0 )
+						LrTasks.startAsyncTask( function()
+							LrTasks.sleep(0.5)
+							self.text_color = import 'LrColor'( 0, 0, 1 )
+						end)
+					end,
+				},
 },
 {
-      title = "Debug Settings",
+      title = "Helper Tools",
 	  tooltip =  bind { key = 'logLevel', object = propertyTable },		  
 f:group_box {
 title = "Logging Level:", 
 fill_horizontal = 0,
 spacing = f:control_spacing(),
-f:popup_menu {
+						f:row {
+						fill_horizontal = 0,
+								f:popup_menu {
 					fill_horizontal = 1,
-					width = 120,
+					--width = 120,
 					items = {
 						{ title = "Log File - None", value = 'none' },
 						{ title = "Log File - Errors", value = 'errors' },
@@ -218,9 +229,52 @@ f:popup_menu {
 						{ title = "Log File - Debug", value = 'debug' },
 					},
 					value = bind { key = 'logLevel', object = propertyTable }
-				}		
-			}	
-      }
+				},
+
+				f:push_button {
+						fill_horizontal = 1,
+						title = 'Clear Log',
+						action = function()
+logPath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "zenphotopublisher.log")
+if LrFileUtils.exists( logPath ) then
+local success, reason = LrFileUtils.delete( logPath )
+if not success then
+log:error("Error deleting existing logfile!" .. reason)
+end
+log:trace("Log cleared by user")
+end
+						end,
+					},				
+--[[					f:push_button {
+						fill_horizontal = 1,
+						title = 'Submit log',
+						action = function()
+						log:info("Send Log")
+   local success, body, headers = LrFunctionContext.pcallWithContext("Send Log",
+    function()
+     return LrHttp.post("http://www.glamworkshops.com/misc/process.php",
+"name=joe&email=bb@bb.com&comments=hey man look me here&spam=4&submit=send")
+    end
+   )
+   if not success then
+   log:error("Send Log: ", headers.error)
+
+   end
+   assert(body, "no body returned")
+   assert(headers, "no headers returned")
+log:info("Send Log: ", table_show(headers))
+log:info("Send Log body: ", table_show(body))
+  end,
+					},--]]
+				},
+
+						f:static_text {
+					title = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "zenphotopublisher.log"), 
+				},	
+			},
+
+      },
 	
 	}
 end	
+

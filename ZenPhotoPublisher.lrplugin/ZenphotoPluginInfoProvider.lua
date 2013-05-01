@@ -4,7 +4,7 @@ ZenphotoPluginInfoProvider.lua
 Export service provider description for Lightroom Zenphoto uploader
 ------------------------------------------------------------------------------]]
 require 'ZenphotoDialogSections'
---require "LRLib_SelfUpdate"
+require "LRLib_SelfUpdate"
 local startD = {}
 local endD = {}
 local startDone = {}

@@ -8,6 +8,7 @@ some utilities and helper functions
 local LrDialogs 		= import 'LrDialogs'
 local LrStringUtils		= import 'LrStringUtils'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
+local Info = require 'Info'
 
 Utils = {}
 
@@ -122,6 +123,10 @@ math.randomseed(os.time())
         return(table.concat(pass)) -- concatenate all indicies of the "pass" array, then print out concatenation.
 end
  
+ 
+ function getVersion()
+    return string.format("%i.%i.%i.%i", Info.VERSION.major, Info.VERSION.minor, Info.VERSION.revision, Info.VERSION.build)
+end
 	--
 	--
 	--	strip string

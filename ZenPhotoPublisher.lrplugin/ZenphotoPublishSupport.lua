@@ -21,19 +21,18 @@ require 'ZenphotoPublishSupportExtention'
 local publishServiceProvider = {}
 
 publishServiceProvider.small_icon = 'zenphoto_small.png'
---publishServiceProvider.publish_fallbackNameBinding = 'fullname'
 publishServiceProvider.titleForPublishedCollection = 'Album'
---publishServiceProvider.titleForPublishedCollectionSet = LOC "$$$/Zenphoto/titleForPublishedCollectionSet="
-publishServiceProvider.titleForPublishedCollection_standalone = LOC "$$$/Zenphoto/titleForPublishedCollection/Standalone=New Album"
-publishServiceProvider.titleForPublishedCollectionSet_standalone = LOC "$$$/Zenphoto/titleForPublishedCollectionSet/Standalone=New Album"
-publishServiceProvider.titleForPublishedSmartCollection = LOC "$$$/Zenphoto/TitleForPublishedSmartCollection=New Dynamic Album"
-publishServiceProvider.titleForPublishedSmartCollection_standalone = LOC "$$$/Zenphoto/TitleForPublishedSmartCollection/Standalone=New Dynamic Album"
+publishServiceProvider.titleForPublishedCollectionSet = LOC "$$$/Zenphoto/titleForPublishedCollectionSet=Parent Folder"
+publishServiceProvider.titleForPublishedCollection_standalone = LOC "$$$/Zenphoto/titleForPublishedCollection/Standalone=Album"
+publishServiceProvider.titleForPublishedCollectionSet_standalone = LOC "$$$/Zenphoto/titleForPublishedCollectionSet/Standalone=Parent Folder"
+publishServiceProvider.titleForPublishedSmartCollection = LOC "$$$/Zenphoto/TitleForPublishedSmartCollection=Dynamic Album"
+publishServiceProvider.titleForPublishedSmartCollection_standalone = LOC "$$$/Zenphoto/titleForPublishedSmartCollection/Standalone=Dynamic Album"
 publishServiceProvider.disableRenamePublishedCollection = false
 publishServiceProvider.disableRenamePublishedCollectionSet = true
 publishServiceProvider.supportsCustomSortOrder = true
-publishServiceProvider.titleForPhotoRating = LOC "$$$/Zenphoto/TitleForPhotoRating=Image Rating"
-publishServiceProvider.titleForGoToPublishedCollection = LOC "$$$/Zenphoto/TitleForGoToPublishedCollection=Show album on ZenPhoto"
-publishServiceProvider.titleForGoToPublishedPhoto = LOC "$$$/Zenphoto/TitleForGoToPublishedPhoto=Show image on ZenPhoto"
+publishServiceProvider.titleForPhotoRating = LOC "$$$/Zenphoto/titleForPhotoRating=Image Rating"
+publishServiceProvider.titleForGoToPublishedCollection = LOC "$$$/Zenphoto/titleForGoToPublishedCollection=Show album on ZenPhoto"
+publishServiceProvider.titleForGoToPublishedPhoto = LOC "$$$/Zenphoto/titleForGoToPublishedPhoto=Show image on ZenPhoto"
 
 function publishServiceProvider.getCollectionBehaviorInfo( publishSettings,info )
 	log:trace("getCollectionBehaviorInfo-Sync Albums/Images"..table_show(publishSettings))
