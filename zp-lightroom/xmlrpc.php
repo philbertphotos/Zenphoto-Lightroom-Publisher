@@ -2,7 +2,7 @@
  error_reporting(E_ERROR | E_PARSE);
 //
 //    make sure that the WEBPATH is set to parent directory for correct URL values
-//4.0.1
+//4.0.1.20130501
 $dir = str_replace('\\', '/', realpath(dirname(__FILE__)));
 define('SERVERPATH', str_replace('/plugins/zp-lightroom', '', $dir));
 require_once(SERVERPATH . '/zp-core/functions.php');
@@ -32,16 +32,6 @@ $server = new IXR_Server(array(
  *
  **/
  
-  function writelog($str)
-{
-//$myFile = "xmlrpc.log";
-$filename = 'xmlrpc.log';
-$handle = fopen($filename,"x+");
-fwrite($handle,print_r($str, true));
-//debuglog("File written");
-fclose($handle);
-} 
-
 function getFolderNode($foldername)
 {
     return strrpos($foldername, '/') ? substr(strrchr($foldername, "/"), 1) : $foldername;
@@ -297,7 +287,6 @@ function getAlbumList($args)
                 'commentson' => $album->getCommentsAllowed()
             ));
     } 
-			writelog($list);
     return $list;
 }
 /**
