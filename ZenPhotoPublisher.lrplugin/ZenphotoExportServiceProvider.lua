@@ -51,51 +51,42 @@ exportServiceProvider.exportPresetFields = {
 		{ key = 'LR_size_maxWidth', default = '1024' },
 		{ key = 'LR_outputSharpeningMedia', default = 'screen' },
 		{ key = 'LR_size_doNotEnlarge', default = 'true' },
-		{ key = 'username', default = "yourloginname" },
-		{ key = 'password', default = "password" },
-		{ key = 'host', default = "wwww.yourzenphotoserver.com" },
 		{ key = 'instance_ID', default = 00000 },
-		{ key = 'accountStatus', default = "Please fill out the available sections and save to enable this service" },
+		{ key = 'newService', default = "Please fill out the available sections and save to enable this service" },
+		{ key = 'accountStatus', default = "Not Available" },
+		{ key = 'host', default = "yourzenphotoinstall.com" },
 		{ key = 'loginButtonTitle', default = "DISABLED" },
 		{ key = 'instanceKey', default=(import 'LrDate').currentTime()},
 		{ key = 'uploadMethod', default = "POST" },
-		{ key = 'deepscan', default = "1" },
-		{ key = 'token', default = "" },
+		{ key = 'deepscan', default = true },
 	}
 --------------------------------------------------------------------------------
 
 function exportServiceProvider.startDialog( propertyTable )
 log:trace("exportServiceProvider.startDialog")
-	if not propertyTable.LR_publishService then	return end
-	local publishService = propertyTable.LR_publishService
-	publishServiceID = publishService.localIdentifier
-	
-	prefs.instanceID = publishServiceID	
-	
-	instanceID = tonumber(trim(prefs.instanceID))
-	
-	--set Gobal instance mandotory to support multiple publiser instances.
-	propertyTable.instance_ID = publishServiceID
-	
-	log:info("publishServiceID:" ..publishServiceID)
 
-	if instanceID ~= nil then
-		log:trace("instanceId not nil = ",prefs.instanceID)
-	else
-		log:trace("instanceId is nil = ",prefs.instanceID)
+	-- clear login if it's a new publishing instance
+	if not propertyTable.LR_editingExistingPublishConnection and propertyTable.LR_isExportForPublish then
+	log:info('guess this is a new publishing service')
 	end
-			--if prefs.instanceTable ~= nil or prefs.instanceTable.instanceID ~= true then
+	
+	--This is a new service so return
+	if not propertyTable.LR_publishService then	return end
+	
+	local publishService = propertyTable.LR_publishService
+
+	instanceID = publishService.localIdentifier
+		
+		--set Gobal instance mandotory to support multiple publisher instances.
+propertyTable.instance_ID = instanceID
+	
+	log:info("instanceID:" ..instanceID)
 			-- creating instance table in prefs
-				if prefs.instanceTable == nil then
-					log:info("Creating instance table")
-					prefs.instanceTable = {}
-				end			
-				
-if prefs.instanceTable[instanceID] then
- log:trace("instanceId exsits")
- else
-  log:trace("Inserting new instance")
-				table.insert(prefs.instanceTable,instanceID,
+				if prefs[instanceID] == nil then
+					log:info("Creating instance table (exportServiceProvider)")
+					prefs[instanceID] = {}
+			log:trace("Inserting new instance")
+				table.insert(prefs[instanceID],
 					{
 					host = propertyTable.host,
 					instance_ID = propertyTable.instance_ID,
@@ -103,58 +94,73 @@ if prefs.instanceTable[instanceID] then
 					uploadMethod = propertyTable.uploadMethod,
 					username = "yourname",
 					password = "password",
-					token = "",
-					deepscan = "1"
+					token = false,
+					deepscan = propertyTable.deepscan
 					}
-				)				
-			end
+				)	
+				--adds album table
+	if not prefs[instanceID].albums then
+	log:info("Creating albums table")
+	  --prefs[instanceID].albums = nil
+		prefs[instanceID].albums = {}
+	end	
+end			
 			
-	prefs.instanceTable[instanceID].serviceIsRunning = publishService
+	prefs[instanceID].serviceIsRunning = publishService
 log:info("prefs.serviceIsRunning ".. table_show(publishService))
-	if prefs.instanceTable[instanceID].serviceIsRunning then
+	if prefs[instanceID].serviceIsRunning then
 		propertyTable.serviceIsRunning = true
-		propertyTable.publishServiceID = publishServiceID
+		propertyTable.instanceID = instanceID
 	else
 		propertyTable.serviceIsRunning = false
-		propertyTable.publishServiceID = nil
+		propertyTable.instanceID = nil
 	end
 	
 	-- Make sure we're logged in.
 	require 'ZenphotoUser'
 	ZenphotoUser.initLogin( propertyTable )
 
-	propertyTable.host = prefs.instanceTable[instanceID].host or 'www.yourwebserver.com'
-	prefs.instanceTable[instanceID].host = propertyTable.host
+	propertyTable.host = prefs[instanceID].host or propertyTable.host
+	prefs[instanceID].host = propertyTable.host
 	propertyTable:addObserver( 'host', function() 
-		prefs.instanceTable[instanceID].host = propertyTable.host
+		prefs[instanceID].host = propertyTable.host
+		ZenphotoUser.resetLogin( propertyTable )
+	end)
+	
+	propertyTable.deepscan = prefs[instanceID].deepscan or true
+	prefs[instanceID].deepscan = propertyTable.deepscan
+	propertyTable:addObserver( 'deepscan', function() 
+		prefs[instanceID].deepscan = propertyTable.deepscan
 		ZenphotoUser.resetLogin( propertyTable )
 	end)
 
-	propertyTable.uploadMethod = prefs.instanceTable[instanceID].uploadMethod or 'POST'
-	prefs.instanceTable[instanceID].uploadMethod = propertyTable.uploadMethod
+	propertyTable.uploadMethod = prefs[instanceID].uploadMethod or 'POST'
+	prefs[instanceID].uploadMethod = propertyTable.uploadMethod
 	propertyTable:addObserver( 'uploadMethod', function() 
-		prefs.instanceTable[instanceID].uploadMethod = propertyTable.uploadMethod
+		prefs[instanceID].uploadMethod = propertyTable.uploadMethod
 	end)	
 	
 	propertyTable.webpath = '/plugins/zp-lightroom/' --prefs.webpath or '/plugins/zp-lightroom/'
 	prefs.webpath = '/plugins/zp-lightroom/' --propertyTable.webpath
-	propertyTable:addObserver( 'webpath', function() 
+--[[	propertyTable:addObserver( 'webpath', function() 
 		prefs.webpath = propertyTable.webpath
 		ZenphotoUser.resetLogin( propertyTable )
-	end)
-	
-	if not prefs.instanceTable[instanceID].missing then
-		prefs.instanceTable[instanceID].missing = {}
-	end	
+	end)--]]
 log:debug(table_show(prefs))
 end
 
 --------------------------------------------------------------------------------
 function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
 log:info('--START LOG--')
-	-- set global publishServiceID to identify the current prefs
-	--publishServiceID = localIdentifier
-	--prefs.publishServiceID = trim(publishServiceID)
+
+--cleaning up old data
+if instanceID then
+prefs[instanceID].missing = nil
+table.remove (prefs[instanceID], missing)
+table.remove (prefs,instanceTable)
+prefs.instanceTable = nil
+end
+
     return {
 			{
 			title = "Login to ZenPhoto",
@@ -173,6 +179,11 @@ log:info('--START LOG--')
 					immediate = true,
 				},
 			},
+								f:static_text {
+					fill_horizontal = 1,
+					title = bind 'newService',
+					alignment = 'right',
+				},
 f:group_box {			
 	title = "User Login",
 	fill_horizontal = 1,
@@ -227,6 +238,13 @@ f:row {
 					size = 'small'
 				},
 			},
+	f:checkbox {
+		title = "Detailed scan",
+		checked_value = 'true',
+		tooltip = "(more accurate results if you have multiple images with the same name validates filename and capture time.)",
+		unchecked_value = 'false',
+		value = bind 'deepscan',
+	},
 },
 		
 --[[			f:row {
@@ -338,8 +356,6 @@ end
 --------------------------------------------------------------------------------
 function exportServiceProvider.sync( fullsync, publishService, context, publishSettings )
 log:trace('exportServiceProvider.sync')
-		--set instance ID
-	publishServiceID = publishSettings.instance_ID
 	
 	local catalog = import 'LrApplication'.activeCatalog()
 	local albums = ZenphotoAPI.getAlbums()
@@ -400,12 +416,10 @@ log:trace('exportServiceProvider.sync')
 			LrTasks.yield()
 			
 			remoteId = pubCollection:getRemoteId()
---log:debug('sync Images test'..table_show(publishService))
---log:debug('sync remoteId '..remoteId)
 			if remoteId and pubCollection:getName() ~= 'Sync Albums/Images' then
 				LrFunctionContext.callWithContext('sync Images', function(context)
 					result = publishServiceExtention.getImages( pubCollection, remoteId, publishService, context)
-					prefs.instanceTable[instanceID].missing[remoteId] = result
+					prefs[instanceID].missing[remoteId] = result
 					missing = Utils.joinTables(missing, result)
 				end)
 			end
@@ -467,8 +481,7 @@ end
 
 function exportServiceProvider.processRenderedPhotos( functionContext, exportContext )
 	log:trace('exportServiceProvider.processRenderedPhotos')
---set publisher instance_ID
-	publishServiceID = exportContext.propertyTable.instance_ID
+
 	-- Check for photos that have been uploaded already.
 	local exportSession = exportContext.exportSession
 

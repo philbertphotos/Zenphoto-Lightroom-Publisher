@@ -21,25 +21,24 @@ ZenphotoUser = {}
 --------------------------------------------------------------------------------
 
 local function storedCredentialsAreValid( propertyTable )
-			local username = prefs.instanceTable[instanceID].username
-			local password = prefs.instanceTable[instanceID].password	
-	local serviceIsRunning = prefs.instanceTable[instanceID].serviceIsRunning
-	log:debug("storedCredentialsAreValid")
+			local username = prefs[instanceID].username
+			local password = prefs[instanceID].password	
+	local serviceIsRunning = prefs[instanceID].serviceIsRunning
+	log:info("storedCredentialsAreValid")
 	return username and password and serviceIsRunning
-				
-
 end
 
 --------------------------------------------------------------------------------
 
 local function notLoggedIn( propertyTable )
-	prefs.instanceTable[instanceID].token = nil
+	prefs[instanceID].token = false
 	propertyTable.accountStatus = LOC "$$$/Zenphoto/AccountStatus/NotLoggedIn=Not logged in"
+	propertyTable.newService = LOC "$$$/Zenphoto/NewService/NotLoggedIn="
 	propertyTable.loginButtonTitle = LOC "$$$/Zenphoto/LoginButton/NotLoggedIn=Log In"
 	propertyTable.loginButtonEnabled = true
 	propertyTable.validAccount = false
 	propertyTable.uploadLimit = ''
-	propertyTable.token = nil
+	propertyTable.token = false
 log:trace("accountStatus:", propertyTable.accountStatus)
 end
 
@@ -56,22 +55,24 @@ function ZenphotoUser.login( propertyTable )
 	notLoggedIn( propertyTable )
 
 	local username, password = ZenphotoUser.getLoginAndPassword( propertyTable )
-	prefs.instanceTable[instanceID].username = username
-	prefs.instanceTable[instanceID].password = password	
+	prefs[instanceID].username = username
+	prefs[instanceID].password = password	
 	
-	prefs.instanceTable[instanceID].token = 'OK'
-	propertyTable.token = prefs.instanceTable[instanceID].token
+	prefs[instanceID].token = true
+	--update token value
+	propertyTable.token = prefs[instanceID].token
 	
-	prefs.instanceTable[instanceID].instance_ID = publishServiceID
-	propertyTable.instance_ID = prefs.instanceTable[instanceID].instance_ID
+	prefs[instanceID].instance_ID = instanceID
+	--update instanceID value
+	propertyTable.instance_ID = prefs[instanceID].instance_ID
 
 end
 
 --------------------------------------------------------------------------------
 
 function ZenphotoUser.getLoginAndPassword( propertyTable )
-	log:trace("ZenphotoUser.getLoginAndPassword")
-	local login, password, message = (prefs.instanceTable[instanceID].username), (prefs.instanceTable[instanceID].password)
+	log:trace("ZenphotoUser.getLoginAndPassword",table_show(propertyTable))
+	local login, password, message = (prefs[instanceID].username), (prefs[instanceID].password)
 	
 	local isAuthorized = false
 	local showMessage = false
@@ -88,12 +89,11 @@ function ZenphotoUser.getLoginAndPassword( propertyTable )
 		end
 
 		ZenphotoUser.showLoginDialog( message, propertyTable )
-		login, password = prefs.instanceTable[instanceID].username, prefs.instanceTable[instanceID].password
+		login, password = prefs[instanceID].username, prefs[instanceID].password
 		isAuthorized, showMessage = ZenphotoAPI.authorize( login, password )
 	end
 
 	return login, password
-
 end
 
 --------------------------------------------------------------------------------
@@ -104,12 +104,12 @@ log:trace("ZenphotoUser.initLogin")
 	-- Observe changes to prefs and update status message accordingly.
 	local function updateStatus()
 		if storedCredentialsAreValid( propertyTable ) then
-			local displayUserName = prefs.instanceTable[publishServiceID].username
+			local displayUserName = prefs[instanceID].username
 			
-		if isBlank(prefs.instanceTable[instanceID].token) then 
+		if prefs[instanceID].token == false then 
 			propertyTable.accountStatus = LOC( "$$$/Zenphoto/AccountStatus/LoggedIn=Not Logged in")
 			propertyTable.loginButtonTitle = LOC( "$$$/Zenphoto/LoginButton/LoggedIn=Log in")
-			elseif prefs.instanceTable[instanceID].token == "OK" then 
+			elseif prefs[instanceID].token then 
 			propertyTable.accountStatus = LOC( "$$$/Zenphoto/AccountStatus/LoggedIn=Logged in as ".. displayUserName )
 			propertyTable.loginButtonTitle = LOC( "$$$/Zenphoto/LoginButton/LoggedIn=Switch User?")
 		end
@@ -135,8 +135,8 @@ log:trace("ZenphotoUser.showLoginDialog")
 		local f = LrView.osFactory()
 	
 		local properties = LrBinding.makePropertyTable( context )
-		properties.login = prefs.instanceTable[instanceID].username
-		properties.password = prefs.instanceTable[instanceID].password	
+		properties.login = prefs[instanceID].username
+		properties.password = prefs[instanceID].password	
 
 		local contents = f:column {
 			bind_to_object = properties,
@@ -202,8 +202,8 @@ log:trace("ZenphotoUser.showLoginDialog")
 		
 		if result == 'ok' then
 					log:info("Enter your User name")
-			prefs.instanceTable[instanceID].username = properties.login
-			prefs.instanceTable[instanceID].password = properties.password	
+			prefs[instanceID].username = properties.login
+			prefs[instanceID].password = properties.password	
 		else
 		log:fatal('login error')
 			LrErrors.throwCanceled()

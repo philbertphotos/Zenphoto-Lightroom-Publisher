@@ -28,10 +28,13 @@ publishServiceExtention = {}
 function publishServiceExtention.getImages( publishedCollection, id, publishSettings, context)
 	log:info('publishServiceExtention.getImages')
 	
-	log:info('getImages1: '..table_show(publishedCollection))
-	log:info('getImages2: '..table_show(publishSettings))
-	log:info('getImages3: '..table_show(context))
-	log:info('getImages4: '..table_show(id))
+	--[[log:debug('getImages1: '..table_show(publishedCollection))
+	log:debug('getImages2: '..table_show(publishSettings))
+	log:debug('getImages3: '..table_show(context))
+	log:debug('getImages4: '..table_show(id))--]]
+	
+	--set instance ID
+	local instanceID = publishSettings.instance_ID
 	
     local progressScope = LrDialogs.showModalProgressDialog({
       title = 'Syncing image data from server',
@@ -64,10 +67,10 @@ function publishServiceExtention.getImages( publishedCollection, id, publishSett
 		
 		LrTasks.yield()
 		
-		imageid = trim(Utils.getFilenameNoExt(image.id))
+		imageid = trim(image.id)
 		imagename = trim(Utils.getFilenameNoExt(image.name))
-		imagesdate = trim(Utils.getFilenameNoExt(image.shortdate))
-		imageldate = trim(Utils.getFilenameNoExt(image.longdate))
+		imagesdate = trim(image.shortdate)
+		imageldate = trim(image.longdate)
 	
 photos = catalog:findPhotos {
 			searchDesc = {
@@ -76,22 +79,13 @@ photos = catalog:findPhotos {
 					value = imagename..'.',
 			},
 		}
-	
---end
-
-		--syncphoto = nil
---		if photos and #photos > 1 then
---			photo = publishServiceExtention.selectPhoto(photos, catalog)
---		else
-
-			--syncphoto = photos[1]
-			
-
---		end
 function syncimage()	
 local match
 log:info('--START--')
+--if prefs[instanceID].deepscan == true then
+	
 	for i, syncphoto in pairs ( photos ) do
+	log:debug("check photo: ", syncphoto:getFormattedMetadata( 'dateTimeOriginal' ), imageldate, tostring(syncphoto) )
 	    if imageldate == syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) then
 			match = photos[i] 
 			break	
@@ -101,25 +95,31 @@ log:info('--START--')
 		end
 	end
 	return match
+	
+--	else --deepscan
+--return photos[1]
+--end --deepscan
 end
 
 syncphoto = syncimage()
---syncphoto = photos[1]
 	
 		if syncphoto then
 			catalog:withWriteAccessDo('add photo to collection', function()
 				log:info("+ photo: " .. syncphoto:getFormattedMetadata( 'fileName' ), tostring(syncphoto), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) )
-				--log:info("+ photodate - adjust RAW: " .. photo:getRawMetadata( 'dateTime' ))
-				--log:info("+ photodateRAW: " .. syncphoto:getRawMetadata( 'dateTimeOriginal' ))
-				--log:info("publishedCollection:addPhotoByRemoteId: " .. tostring(syncphoto), image.name, image.id, image.longdate)
+				log:info("publishedCollection:addPhotoByRemoteId: " .. tostring(syncphoto), image.id, image.url, prefs[instanceID].deepscan)
 				publishedCollection:addPhotoByRemoteId( syncphoto, image.id, image.url, true )
 				log:info('--END--\n\n')
 			end)
 		else
-			log:info("- photo: " .. imagename.." - "..imagesdate)
-			log:info("add to missing table TODO".. publishServiceID)
-			--table.insert(prefs.instanceTable[publishServiceID].missing, imagename)
-			table.insert(prefs.instanceTable[publishServiceID].missing[remoteId], imagename)
+			log:info("- photo: " .. imagename.." - "..imageldate )
+			log:info("add to missing table",id,instanceID)
+			if not prefs[instanceID].albums[id].missing then
+			log:info('create "missing" table')
+			prefs[instanceID].albums[id].missing = {}
+			end
+			--add missing image to table
+			table.insert(missing, imagename)
+				prefs[instanceID].albums[id].missing = prefs[instanceID].albums[id].missing
 		end
 	end
 	log:info('reading images from server...done')
@@ -131,11 +131,11 @@ end
 
 --
 --
---	Show Missing files dialog
+--	Show Missing files dialog                                                                             
 --
 --
 function publishServiceExtention.selectPhoto(photos, catalog)
-log:info('selectPhoto')
+log:trace('publishServiceExtention.selectPhoto')
 	local photolist = {}
 	for i, photo in pairs ( photos ) do
 		local entry = { { title = photo:getFormattedMetadata('fileName'), value = photo} }
@@ -196,6 +196,7 @@ log:info('selectPhoto')
 end
 
 function publishServiceExtention.findRoot(collection)
+log:trace('publishServiceExtention.findRoot')
 	local root
 	
 	repeat
@@ -209,7 +210,7 @@ function publishServiceExtention.findRoot(collection)
 end	 
 
 function publishServiceExtention.getDefaultCollection(collection)
-log:trace('getDefaultCollection')
+log:trace('publishServiceExtention.getDefaultCollection')
 	local rootCollectionSet = publishServiceExtention.findRoot(collection)
 
 	if rootCollectionSet then
@@ -222,7 +223,7 @@ log:trace('getDefaultCollection')
 end
 
 function publishServiceExtention.getAllPublishedPhotos(collection, arrayOfPublishedPhotos)
-log:trace('getAllPublishedPhotos')
+log:trace('publishServiceExtention.getAllPublishedPhotos')
 	if not arrayOfPublishedPhotos then arrayOfPublishedPhotos = {} end
 
 	if collection:type() == 'LrPublishedCollectionSet' then
@@ -242,7 +243,7 @@ log:trace('getAllPublishedPhotos')
 end
 
 function publishServiceExtention.removeAllPhotos( collection )
-log:trace('removeAllPhotos')
+log:trace('publishServiceExtention.removeAllPhotos')
 	if collection:type() == 'LrPublishedCollectionSet' then
 		for j, childCollection in pairs (collection:getChildCollections()) do
 			publishServiceExtention.removeAllPhotos(childCollection)
@@ -255,7 +256,7 @@ log:trace('removeAllPhotos')
 end
 
 function publishServiceExtention.collectionNameExists( publishService, name )
-log:trace('collectionNameExists')
+log:trace('publishServiceExtention.collectionNameExists')
 	for j, childCollection in pairs (publishService:getChildCollections()) do
 		if LrStringUtils.lower(childCollection:getName()) == LrStringUtils.lower(name) then
 			return true

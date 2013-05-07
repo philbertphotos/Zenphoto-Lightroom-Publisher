@@ -35,9 +35,7 @@ publishServiceProvider.titleForGoToPublishedCollection = LOC "$$$/Zenphoto/title
 publishServiceProvider.titleForGoToPublishedPhoto = LOC "$$$/Zenphoto/titleForGoToPublishedPhoto=Show image on ZenPhoto"
 
 function publishServiceProvider.getCollectionBehaviorInfo( publishSettings,info )
-	log:trace("getCollectionBehaviorInfo-Sync Albums/Images"..table_show(publishSettings))
-	--log:trace('check getCollection'..publishService.localIdentifier)
-	--              local publishServiceID = assert( info.publishService.localIdentifier )
+	log:trace("publishServiceProvider.getCollectionBehaviorInfo")
 
 	return {
 		defaultCollectionName = "Sync Albums/Images",
@@ -77,7 +75,7 @@ function publishServiceProvider.goToPublishedCollection( publishSettings, info )
 if info.name == "Sync Albums/Images" then
 LrDialogs.message( "You can not delete this collection" )
 elseif info.remoteUrl then
-		LrHttp.openUrlInBrowser( 'http://' .. prefs.instanceTable[publishSettings.instance_ID].host .."/".. info.remoteUrl )
+		LrHttp.openUrlInBrowser( 'http://' .. prefs[prefs.instance_ID].host .."/".. info.remoteUrl )
 end
 end
 
@@ -87,13 +85,12 @@ end
 	 
 function publishServiceProvider.goToPublishedPhoto( publishSettings, info )
 	log:trace("publishServiceProvider.goToPublishedPhoto")
-	log:trace("goToPublishedPhoto.info: "..table_show(info))
-	log:trace("goToPublishedPhoto.info: "..table_show(publishSettings))
+	--log:trace("goToPublishedPhoto.info: "..table_show(info))
+	--log:trace("goToPublishedPhoto.info: "..table_show(publishSettings))
 	if info.remoteUrl then
-		LrHttp.openUrlInBrowser( 'http://' .. prefs.instanceTable[publishSettings.instance_ID].host .."/"..info.remoteUrl )
+		LrHttp.openUrlInBrowser( 'http://' .. prefs[prefs.instance_ID].host .."/"..info.remoteUrl )
 	end
 end
-
 
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when the user
@@ -103,29 +100,39 @@ end
  -- privacy or appearance on a web service).
 
  function publishServiceProvider.viewForCollectionSettings( f, publishSettings, info )
-	log:trace("viewForCollectionSettings")
-	--set instance ID
-	publishServiceID = publishSettings.instance_ID
+	log:trace("publishServiceProvider.viewForCollectionSettings")
 	
-	-- local urlcheck, reply_headers = LrHttp.get("https://nodeload.github.com/philbertphotos/Zenphoto-Lightroom-Publisher/legacy.zip/master", nil, 3)
-	--log:trace('urlcheck: '..table_show(reply_headers))
-		--log:trace("F: "..table_show(f))
-		--log:trace("publishSettings: "..table_show(publishSettings))
-		--log:trace("info: "..table_show(info))
-		-- Make sure we're logged in.
+	--set instance ID
+	instanceID = publishSettings.instance_ID
+	local id = info.collectionSettings.id
+	
+	-- Make sure we're logged in.
 	require 'ZenphotoUser'
 	ZenphotoUser.initLogin( info )
-		-- don't let them edit the default collection
+	
+			-- don't let them edit the default collection
 if info.isDefaultCollection or info.name == "Sync Albums/Images" then
 info.collectionSettings.LR_canSaveCollection = false
+log:info('Sync Albums/Images has no album ID')
+else
+	if not prefs[instanceID].albums[info.collectionSettings.id] then
+				log:info("Creating ablum table", id)
+		if id ~= nil then
+		prefs[instanceID].albums[id] = {}
+		--set default password value
+		if not prefs[instanceID].albums[id].albumpassword then
+	prefs[instanceID].albums[id].albumpassword = ''
+	end
+	end
+	end	
 end
-	if prefs.instanceTable[prefs.instanceID].token ~= 'OK' then
- --LrDialogs.message('You are not logged in...','You need to login before you can get access','info')
+	if prefs[instanceID].token ~= true then
+ LrDialogs.message('You are not logged in...','You need to login before you can get access','info')
 		log:info("You are not logged in")
 		local collectionSettings = assert( info.collectionSettings )
 		collectionSettings.syncEnabled = false
-		--LrErrors.throwCanceled()
-		LrErrors.throwUserError( 'You are not logged in...You need to login before you can get access')
+		LrErrors.throwCanceled()
+		--LrErrors.throwUserError( 'You are not logged in...You need to login before you can get access')
 else
 	local bind = import 'LrView'.bind
 	
@@ -134,7 +141,8 @@ else
 
 	local pubCollection = nil
 	local collectionSettings = assert( info.collectionSettings )
-log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
+log:debug("view CollectionSettings", table_show(info.collectionSettings))
+
 	if not collectionSettings.folder then
 		collectionSettings.folder = ''
 	end
@@ -142,8 +150,19 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 	if not collectionSettings.parentFolder then
 		collectionSettings.parentFolder = ''
 	end
+
 	if not collectionSettings.albumpassword then
-		collectionSettings.albumpassword = ''
+		--collectionSettings.albumpassword = prefs[instanceID].albums[albumId].albumpassword
+
+		--if not prefs[instanceID].albums[albumId].albumpassword then
+		-- prefs[instanceID].albums[albumId].albumpassword = ''
+		--end
+		-- prefs[instanceID].albums[albumId].albumpassword = collectionSettings.albumpassword
+		
+			collectionSettings.albumpassword = ''
+			else 
+			log:info ('albumpassword', collectionSettings.albumpassword)
+			--prefs[instanceID].albums[id].albumpassword = collectionSettings.albumpassword
 	end
 	
 	if not collectionSettings.location then
@@ -159,12 +178,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 	if not collectionSettings.commentson then
 		collectionSettings.commentson = '1'
 	end
-	if not collectionSettings.ratingson then
-		collectionSettings.ratingson = '1'
-	end
-	if not collectionSettings.deepscan then
-		collectionSettings.deepscan = '1'
-	end
+
 	if not collectionSettings.show then
 		collectionSettings.show = '1'
 	end
@@ -175,9 +189,10 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 	if info.publishedCollection then
 		pubCollection = assert( info.publishedCollection )
 		remoteId = pubCollection:getRemoteId()
+		log:info('pubCollection:getRemoteId', remoteId)
 		if remoteId then
 			collectionSettings.syncEnabled = true
-			collectionSettings.missing = prefs.instanceTable[prefs.instanceID].missing[remoteId]
+			collectionSettings.missing = prefs[instanceID].albums[remoteId].missing
 		end
 	end
 	
@@ -220,7 +235,8 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 									end)
 						end,
 					},
-				}
+
+					}
 	end
 	--
 	--	dialog
@@ -293,20 +309,20 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 								},
 						},
 												
-						f:row {
+						--[[f:row {
 							f:static_text {
 								title = "Album Password:",
 								alignment = "right",
-								tooltip = "TODO not operational",
+								tooltip = "creates a album passoword",
 								width = 100,
 								},
 
 							f:edit_field {
 								value = bind 'albumpassword',
-								tooltip = "TODO not operational",
+								tooltip = "creates a album passoword",
 								width_in_chars = 38,
 								},
-						},
+						},--]]
 
 						f:row {
 							f:static_text {
@@ -338,7 +354,7 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 					spacing = f:control_spacing(),
 
 					f:group_box {
-						fill_horizontal = 0,
+						fill_horizontal = 1,
 						title = "Sync images from server",
 						size = 'small',
 
@@ -348,34 +364,22 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 								title = 'Sync images',
 								enabled = bind 'syncEnabled',
 								action = function()
-
 											LrTasks.startAsyncTask( function()
 												LrFunctionContext.callWithContext('function', function(context)
-
-													prefs.instanceTable[prefs.instanceID].missing[remoteId] = {}
-													--log:info('sync Images (mantianance collection)'..table_show(publishSettings))
-													--log:info('sync remoteId (mantianance collection) '..remoteId)
 													collectionSettings.missing = publishServiceExtention.getImages( pubCollection, remoteId, publishSettings, context)
-													prefs.instanceTable[prefs.instanceID].missing[remoteId] = collectionSettings.missing
+													 prefs[instanceID].albums[info.collectionSettings.id].missing = collectionSettings.missing
 
 												end)
 											end)
 											
 								end,
 							},
-							--[[f:push_button {
-								fill_horizontal = 1,
-								title = 'json test',
-								action = ZenphotoAPI.jsontest (remoteID, publishsettings),
-							},--]]
-
-							--[[f:push_button {
+							f:push_button {
 								fill_horizontal = 1,
 								title = 'Show -not found-',
 								enabled = bind {
 									keys = { 'missing' },
 									operation = function( binder, values, fromTable )
-									log:trace('missing prefs: '..values.missing )
 													return values.missing ~= nil and #values.missing > 0
 												end,
 									},
@@ -398,17 +402,10 @@ log:info("viewForCollectionSettings / ZenphotoAPI.getAlbums")
 									LrTasks.startAsyncTask( function()
 										exportServiceProvider.deleteMissingPhotos( collectionSettings.missing )
 										collectionSettings.missing = {}
-										prefs.instanceTable[prefs.instanceID].missing[remoteId] = {}
+										 prefs[instanceID].albums[info.collectionSettings.id].missing = {}
 									end)
 								end,
-							},--]]
-							f:checkbox {
-								title = "Detailed scan",
-								checked_value = '1',
-								tooltip = "(more accurate results if you have multiple images with the same name validates filename and capture time.)",
-								unchecked_value = '0',
-								value = bind 'deepscan',
-								},
+							},
 						},
 					},
 					
@@ -433,12 +430,15 @@ end
 
 function publishServiceProvider.updateCollectionSettings( publishSettings, info )
 	log:trace("updateCollectionSettings")
-	if prefs.instanceTable[prefs.instanceID].token ~= 'OK' then
+	if prefs[instanceID].token ~= true then
 	else
 	if info.collectionSettings.folder == '' then
 		info.collectionSettings.folder = LrStringUtils.lower( info.name )
 	end
 	
+--show albums table
+	log:info ('show album table',table_show ( prefs[instanceID]))
+	prefs[instanceID] = prefs[instanceID]
 	
 	LrTasks.startAsyncTask( function()
 
@@ -482,21 +482,21 @@ log:trace("create new collection")
 														parentFolder = info.collectionSettings.parentFolder,
 														 description = info.collectionSettings.description,
 															location = info.collectionSettings.location,
-															albumpassword = info.collectionSettings.albumpassword,
+													   albumpassword = info.collectionSettings.albumpassword,
+													   --albumpassword = prefs[instanceID].albums[info.collectionSettings.id].albumpassword,
 																show = info.collectionSettings.show,
-														  commentson = info.collectionSettings.commentson,
-														  --ratingson = info.collectionSettings.ratingson,														  
+														  commentson = info.collectionSettings.commentson,													  
 													})
-				log:info('editAlbum Status: '..table_show(status))
+				log:info('publishServiceProvider.editAlbum: '..table_show(status))
 				
 			--if status.albumpassword == not nil then
-		--if prefs.instanceTable[instanceID].remoteId == nil then
+		--if prefs[instanceID].remoteId == nil then
 					--log:info("Creating ablum table"..remoteId)
-		--table.insert (prefs.instanceTable,instanceID,remoteId)
+		--table.insert (prefs,instanceID,remoteId)
 	--end	
 
-			--prefs.instanceTable[instanceID].remoteId.albumpassword = info.collectionSettings.albumpassword
-			--prefs.instanceTable[prefs.instanceID][remoteId] = albumpassword
+			--prefs[instanceID].remoteId.albumpassword = info.collectionSettings.albumpassword
+			--prefs[instanceID][remoteId] = albumpassword
 					--log:trace("album password:"..info.collectionSettings.albumpassword)
 			--end
 			--	update collection settings
@@ -518,7 +518,6 @@ log:trace("create new collection")
 	end)
 end
 end
-
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when the user
  -- closes the dialog for creating a new published collection or editing an existing
@@ -529,7 +528,6 @@ end
 function publishServiceProvider.endDialogForCollectionSettings( publishSettings, info )
 	log:trace("publishServiceProvider.endDialogForCollectionSettings (n/a)")
 end
-
 -------------------------------------------------------------------------------
 --- This plug-in callback function is called when the user has renamed a
  -- published collection via the Publish Services panel user interface. This is
@@ -538,7 +536,6 @@ end
 function publishServiceProvider.renamePublishedCollection( publishSettings, info )
 	log:trace("publishServiceProvider.renamePublishedCollection (n/a)")	
 end
-
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when the user
  -- creates a new published collection set or edits an existing one. It can add
@@ -549,7 +546,6 @@ end
 function publishServiceProvider.viewForCollectionSetSettings( f, publishSettings, info )
 	log:trace("publishServiceProvider.viewForCollectionSetSettings (n/a)")
 end
-
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when the user
  -- closes the dialog for creating a new published collection set or editing an existing
@@ -570,7 +566,6 @@ end
 function publishServiceProvider.updateCollectionSetSettings( publishSettings, info )
 	log:trace("publishServiceProvider.updateCollectionSetSettings (n/a)")
 end
-
 
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when new or updated
@@ -595,7 +590,6 @@ function publishServiceProvider.shouldReverseSequenceForPublishedCollection( pub
 	log:trace("publishServiceProvider.shouldReverseSequenceForPublishedCollection n/a")
 	return collectionInfo.isDefaultCollection
 end
-
 
 --------------------------------------------------------------------------------
 --- This plug-in defined callback function is called when one or more photos
@@ -735,7 +729,7 @@ function publishServiceProvider.deletePublishedCollection( publishSettings, info
 		if info and info.remoteId then
 
 			ZenphotoAPI.deleteAlbum( publishSettings, info.remoteId )
-			prefs.instanceTable[prefs.instanceID].missing[info.remoteId] = nil
+			 prefs[instanceID].albums[info.remoteId].missing = nil
 			log:trace("deleteAlbum")
 
 		end
@@ -765,25 +759,33 @@ end
 	 -- </ul>
 
 function publishServiceProvider.didCreateNewPublishService( publishSettings, info )
-	local pi = publishSettings.localIdentifier
-	log:trace("didCreateNewPublishService (n/a)"..pi)
-			if prefs.instanceTable == nil then
-					log:info("Creating instance table")
-					prefs.instanceTable = {}
-				end			
-if prefs.instanceTable[pi] then
- log:trace("instanceId exsits")
- else
-  log:trace("Inserting new publisher instance")
-				table.insert(prefs.instanceTable,pi,
+	local instanceID = publishSettings.localIdentifier
+	log:trace("didCreateNewPublishService", instanceID)
+	
+			-- creating instance table in prefs
+				if prefs[instanceID] == nil then
+					log:info("Creating instance table (exportServiceProvider)")
+					prefs[instanceID] = {}
+			log:trace("Inserting new instance")
+				table.insert(prefs[instanceID],
 					{
-					host = 'wwww.yourzenphotoserver.com',
-					webpath = '/plugins/zp-lightroom/',
-					username = "yourloginname",
+					host = propertyTable.host,
+					instance_ID = instanceID,
+					webpath = propertyTable.webpath,
+					uploadMethod = propertyTable.uploadMethod,
+					username = "yourname",
 					password = "password",
+					token = false,
+					deepscan = propertyTable.deepscan
 					}
-				)				
-			end
+				)	
+				--adds album table
+	if not prefs[instanceID].albums then
+	log:info("Creating albums table")
+	  --prefs[instanceID].albums = nil
+		prefs[instanceID].albums = {}
+	end	
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -810,7 +812,7 @@ end
 	 -- </ul>
 	 
 function publishServiceProvider.didUpdatePublishService( publishSettings, info )
-log:trace("didUpdatePublishService: ")
+log:trace("publishServiceProvider.didUpdatePublishService")
 	log:debug("didUpdate PublishSettings: ".. table_show(publishSettings))
 	log:debug("didUpdate Info: ".. table_show(info))
 end
@@ -862,7 +864,7 @@ end
  -- using the <a href="LrTasks.html"><code>LrTasks</code></a> namespace. In most
  -- cases, you should not need to start your own task within this function.</p>
  -- <p>First supported in version 3.0 of the Lightroom SDK.</p>
-	-- @name publishServiceProvider.willDeletePublishService
+	-- @name publishServiceProvider.willDeletePublis-hService
 	-- @class function
 	-- @param publishSettings (table) The settings for this publish service, as specified
 		-- by the user in the Publish Manager dialog. Any changes that you make in
@@ -877,10 +879,17 @@ end
 	-- </ul> --]]
 
 function publishServiceProvider.willDeletePublishService( publishSettings, info )
-	log:trace("publishServiceProvider.willDeletePublishService")
-		local pi = publishSettings.instance_ID
-	table.remove(prefs.instanceTable,pi)
-	log:trace("DeletePublishService.removed the published instance :"..pi)
+	log:trace("publishServiceProvider.willDeletePublishService", table_show(publishSettings))
+	log:trace("publishServiceProvider.willDeletePublishServiceinfo", table_show(info))
+		local instanceID = publishSettings.instance_ID
+		log:trace("willDeletePublishServiceinfo-instanceID ", instanceID)
+		
+	--remove instanceID settings (general cleanup)	
+	prefs[instanceID] = {}
+	prefs[instanceID] = nil
+	table.remove(prefs,instanceID)
+	prefs[instanceID] = prefs[instanceID]
+	log:trace("DeletePublishService.removed the published instance :", table_show(prefs[instanceID]))
 	
 	local publishService = info.publishService
 	local publishedPhotos = publishService.catalog:findPhotosWithProperty( "org.zenphoto.lightroom.publisher", "photoId" )
@@ -916,7 +925,7 @@ end
 function publishServiceProvider.getCommentsFromPublishedCollection( publishSettings, arrayOfPhotoInfo, commentCallback )
 	log:trace("getCommentsFromPublishedCollection"..table_show(publishSettings))
 		--set instance ID
-	publishServiceID = publishSettings.instance_ID
+	instanceID = publishSettings.instance_ID
 		-- Make sure we're logged in.
 	require 'ZenphotoUser'
 	ZenphotoUser.initLogin( publishSettings )
@@ -934,7 +943,6 @@ function publishServiceProvider.getCommentsFromPublishedCollection( publishSetti
 				table.insert( commentList, {
 								commentId 		= comment["commentId"],
 								commentText 	= comment["commentData"],
-								--dateCreated 	= tonumber(comment["commentDate"]),
 								dateCreated 	= LrDate.timeFromPosixDate(tonumber(comment["commentDate"])),
 								username 		= comment["commentUsername"],
 								realname		= comment["commentRealname"],
@@ -1005,4 +1013,3 @@ end
 --------------------------------------------------------------------------------
 --publishServiceProvider.disableRenamePublishedCollection = true;
 ZenphotoPublishSupport = publishServiceProvider
-

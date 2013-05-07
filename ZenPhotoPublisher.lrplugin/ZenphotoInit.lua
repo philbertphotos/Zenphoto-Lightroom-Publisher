@@ -43,14 +43,14 @@ log:info('ZenphotoInit')
 
 --LRLib_SelfUpdate.init(pluginName,"zenphotopublisher",ZenphotoInfo.version, "https://nodeload.github.com/philbertphotos/Zenphoto-Lightroom-Publisher/zip/4.0.1" , "org.zenphoto.lightroom.publisher")
 
---[[local logPath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "zenphotopublisher.log")
+local logPath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "zenphotopublisher.log")
 if LrFileUtils.exists( logPath ) then
 local success, reason = LrFileUtils.delete( logPath )
 if not success then
 log:error("Error deleting existing logfile!" .. reason)
 end
 end
-
+--[[
 if prefs.debugLogging == nil then
 prefs.debugLogging = false
 end

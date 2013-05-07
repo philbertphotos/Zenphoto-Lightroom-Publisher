@@ -12,6 +12,7 @@ local LrFunctionContext	= import 'LrFunctionContext'
 local LrLogger          = import 'LrLogger'
 local LrView 			= import "LrView"
 local LrTasks			= import "LrTasks"
+local LrPathUtils		= import 'LrPathUtils'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local bind 				= LrView.bind
 
@@ -22,7 +23,7 @@ require 'ZenphotoUser'
 ZenphotoDialogSections = {}
 
 function updateLogLevelStatus( propertyTable )
-	--log:trace ("Calling updateLogLevelStatus( propertyTable )")
+	log:trace ("updateLogLevelStatus( propertyTable )")
 	if propertyTable.logLevel == 'none' then
 		log:disable( )
 		propertyTable.logSynopsis = "Log File - none"
@@ -64,13 +65,14 @@ end
 -------------------------------------------------------------------------------
 
 function ZenphotoDialogSections.endDialog( propertyTable )
+	log:trace("ZenphotoDialogSections.endDialog")
 	prefs.logLevel = propertyTable.logLevel
-	log:trace("Calling ZenphotoDialogSections.endDialog")
+
 	-- save the log level into the preferences
 end
 
 function ZenphotoDialogSections.sectionsForTopOfDialog( f, propertyTable )
-	log:trace("Calling ZenphotoDialogSections.sectionsForTopOfDialog")
+	log:trace("ZenphotoDialogSections.sectionsForTopOfDialog")
 	-- Initializations
 
 	if propertyTable.logLevel == nil then
@@ -277,4 +279,3 @@ log:info("Send Log body: ", table_show(body))
 	
 	}
 end	
-

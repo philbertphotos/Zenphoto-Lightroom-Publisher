@@ -67,9 +67,9 @@ function decode64(value)
 	if type(value) == 'table' then
 		for k,v in pairs(value) do
 			if type(v) == 'table' then
-			log:debug('before decode: '..table_show(value[k]))
+			--log:debug('before decode: '..table_show(value[k]))
 				value[k] = decode64(v)
-				log:debug('after decode: '..table_show(value[k]))
+				--log:debug('after decode: '..table_show(value[k]))
 			else
 				value[k] = LrStringUtils.decodeBase64(v)
 			end
