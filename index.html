@@ -156,18 +156,18 @@ Zenphoto features support for images, video and audio formats, and the Zenpage C
 	
 		<div class="sixteen columns titleset">
 		<section id="downloads" class="clearfix">
-		<h4>Newest version is 4.0.1.20130423</h4>
-<a href="https://github.com/philbertphotos/Zenphoto-Lightroom-Publisher/archive/4.0.1.zip" id="download-zip" class="button"><span>Download .zip</span></a>
+		<h4>Newest version is 4.5.0.20130513</h4>
+<a href="https://github.com/philbertphotos/Zenphoto-Lightroom-Publisher/archive/4.5.0.zip" id="download-zip" class="button"><span>Download .zip</span></a>
     	
 		<div class="sixteen columns titleset">
 			<h2>Installation</h2>
 <p>The installation is very simple. The download comes as a ZIP-file which contains two directories:
 
     <ul><li><strong>ZenphotoPublisher.lrplugin﻿</strong> – is the Lightroom plug-in which must be installed from the Lightroom Plugin Manager</li>
-    <li><strong>zp-lightroom</strong> - the web service which makes the interaction between Lightroom an Zenphoto possible.</li> 
+    <li><strong>plugins</strong> - copy this folder to the root of you installation this creates the  interaction between Lightroom an Zenphoto. (this should be easier) example: /rootweb/Zenphotoinstall/<copy here></li> 
 	</ul>
 	<strong>Configuration﻿</strong>
-Please copy the <em>zp-lightroom </em>directory to your plugins folder of your Zenphoto installation. Furthermore you need to install the ZenphotoPublisher.lrplugin﻿﻿ via the Lightroom’s Plug-in Manager. When you have done this and you’ll have activated the plug-in you’ll need to do some configuration steps to connect with your server:</p>
+Once you copy <em>plugin</em>files to your Zenphoto installation. You will then need to install the ZenphotoPublisher.lrplugin﻿﻿ via the Lightroom’s Plug-in Manager. When you have done this and you’ll have activated the plug-in you’ll need to do some configuration steps to connect with your server:</p>
 <em>lightroom publishing</em>   
 Go to the Publish Service section of Lightroom and select the “Zenphoto Publisher”
     Enter a name for the service (any string is possible)
@@ -176,7 +176,7 @@ Go to the Publish Service section of Lightroom and select the “Zenphoto Publis
 		</div><!-- .columns -->
 		
 		 <h1> Bugs & Limitations</h1>
-   <span> Due to a bug in Lightroom, the Zenphoto sub-albums are not yet fully supported, even if we never experienced catalog damages – but nevertheless: use it on your own risk. 
+   <span> Due to a bug in Lightroom, the Zenphoto sub-albums are not yet fully supported. ROADMAP
    If you afraid problems then make use of the sync buttons from withing the “Sync Albums/Images collection. This works in any case!
     <p><strong>ATTENTION: </strong> never make an album part of itself or of an containing sub-album. </p></span>
 	<div>
@@ -186,33 +186,16 @@ Go to the Publish Service section of Lightroom and select the “Zenphoto Publis
 <div class="sixteen columns titleset">
 <h1>FAQ...</h1>
 
-<b>I have logged-in but cannot publish any photos</b>
-
-<p>Please make sure that the zp-lightroom directory has write permissions. This is necessary for temporary files. If you cannot or wont make it writable then change the upload method to ‘XML data‘.</p>
-
-<p>If you now have still problems then check the owner and the permissions of the photos that you want publish.</p>
-
-In other words: you must be the owner of a photo that you want publish to the server. This problem can happen when you want “overwrite” an already existing photo on the server which has a different owner or not sufficient permissions.
-
-I get the message ‘Unable to upload photo …’ See the point above.</br>
-
-If you still have problems, then please try to change the “Upload method” to “XML data”.</br>
-
-My filenames contain an apostrophe and I cannot publish any photos</br>
-
-Please change the “Upload method” to “XML data”. Until now I couldn’t find any way to cast an apostrophe for the Multipart-POST, but “XML data” is working.
-</p>	
-</div>
 <strong>“Server could not be connected”</strong> 
 <p>solution:</p>some users had problems with this error message. It appears due to incorrect server settings, especially when ZP is running in a sub-directory.
 
 ZenPhoto-URL – contains ONLY the the server name</br>
 webservice directory – contains the complete path from root</br>
 
-For example: when you have installed ZP on “www.testserver.com/zp” your “zp-lightroom” directory is copied under “www.testserver.com/zp/plgins/zp-lightroom”.
+For example: when you have installed ZP on “www.testserver.com/zp” your “ZenPublisher” directory is copied under “www.testserver.com/zp/plgins/ZenPublisher”.
 
 ZenPhoto-URL – “www.testserver.com”</br>
-webservice directory – “/zp/plugins/zp-lightroom”
+webservice directory – “/zp/plugins/ZenPublisher”
         </section>
 </div>
 </div>
@@ -226,7 +209,41 @@ webservice directory – “/zp/plugins/zp-lightroom”
 		</div>
 		
 		<div class="two-thirds column">
-		
+		 
+<h2> Date CODE 4.5.0.20130513 BETA</h2>
+<p>This is a massive rewrite of the Lightroom and Zenphoto API. It had to
+be done and have to say every major bug has been squashed. Even some of the issues I had vanished instantly.</p>
+1. Converted the API from XML to JSON</br>
+2. Removed all useless code and consolidated other functions</br>
+3. OSX/MAC users will be happy with this version</br>
+4. Redid the plugin side of the interface for easier updates and future
+changes.</br>
+5. Added clean up code to removed older entries from previous versions</br>
+6. Clean up login of data</br>
+7. 4.5.0 branch is a HUGE fork from the original.</br>
+
+<p>After bug testing for over a week and doing multiple test of different
+versions I am confident the this will soon superseded the 3.0 and 4.0
+branches. I still have some work to do but as I can see is fit for
+release.</p>
+
+<h2>ROADMAP</h2>
+<p>-------------------</p>
+In the works auto update feature.
+Sub-folder support in Lightroom
+Better "missing images" support (not reliable again)
+Album password coming in 4.5.1 soon
+Lightroom 5 Support
+
+<b>Know bugs after update.</b>
+<p>-----------------------------</p>
+<p>No way around it but does not affect everyone.
+1. You need to add back your instances of Zenphoto (user-name password
+etc)
+2. Re-Syncing your albums and images is a must for most systems this way
+it purges old data and creates new ones.
+</p>
+
 <h2> MAJOR UPDATE AND FIXES 4.0.1.20130423</h2>
 
 <p>Added the ability to sync comments and ratings from Zenphoto system (cant add comments yet maybe in 4.0.2)
