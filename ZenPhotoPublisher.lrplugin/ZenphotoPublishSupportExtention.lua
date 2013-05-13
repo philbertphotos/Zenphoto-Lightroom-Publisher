@@ -28,11 +28,6 @@ publishServiceExtention = {}
 function publishServiceExtention.getImages( publishedCollection, id, publishSettings, context)
 	log:info('publishServiceExtention.getImages')
 	
-	--[[log:debug('getImages1: '..table_show(publishedCollection))
-	log:debug('getImages2: '..table_show(publishSettings))
-	log:debug('getImages3: '..table_show(context))
-	log:debug('getImages4: '..table_show(id))--]]
-	
 	--set instance ID
 	local instanceID = publishSettings.instance_ID
 	
@@ -68,34 +63,39 @@ function publishServiceExtention.getImages( publishedCollection, id, publishSett
 		LrTasks.yield()
 		
 		imageid = trim(image.id)
+		imageid = trim(image.albumid)
 		imagename = trim(Utils.getFilenameNoExt(image.name))
 		imagesdate = trim(image.shortdate)
 		imageldate = trim(image.longdate)
-	
+	log:info('Searching for...:', imagename)
 photos = catalog:findPhotos {
 			searchDesc = {
 					criteria = 'filename',
-					operation = 'any',
+					operation = 'containsAll',
 					value = imagename..'.',
 			},
 		}
 function syncimage()	
-local match
+
 log:info('--START--')
+
 --if prefs[instanceID].deepscan == true then
 	
 	for i, syncphoto in pairs ( photos ) do
-	log:debug("check photo: ", syncphoto:getFormattedMetadata( 'dateTimeOriginal' ), imageldate, tostring(syncphoto) )
-	    if imageldate == syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) then
-			match = photos[i] 
-			break	
-	elseif imageldate == nil then
-	match = photos[1]
-	break
-		end
+	log:debug("checking photo: ", syncphoto:getFormattedMetadata( 'fileName' ), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ), imageldate, tostring(syncphoto) )
+		
+	if trim(imageldate) == '12/31/1969 7:00:00 PM'	then
+	log:debug("photo has an invalid or null date ", imageldate, tostring(syncphoto) )
+	return photos[1]
+		end	
+		
+	if imageldate == syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) then
+		log:debug("photo "..imagename.." found ", i, imageldate..' and '..syncphoto:getFormattedMetadata( 'dateTimeOriginal' )..' match' )
+			return photos[i] 	
 	end
-	return match
+	end
 	
+--log:debug(imagename, imageldate)
 --	else --deepscan
 --return photos[1]
 --end --deepscan
@@ -105,28 +105,37 @@ syncphoto = syncimage()
 	
 		if syncphoto then
 			catalog:withWriteAccessDo('add photo to collection', function()
-				log:info("+ photo: " .. syncphoto:getFormattedMetadata( 'fileName' ), tostring(syncphoto), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) )
+				log:info("+ photo: "..  syncphoto:getFormattedMetadata( 'fileName' ), tostring(syncphoto), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) )
 				log:info("publishedCollection:addPhotoByRemoteId: " .. tostring(syncphoto), image.id, image.url, prefs[instanceID].deepscan)
 				publishedCollection:addPhotoByRemoteId( syncphoto, image.id, image.url, true )
 				log:info('--END--\n\n')
 			end)
 		else
 			log:info("- photo: " .. imagename.." - "..imageldate )
-			log:info("add to missing table",id,instanceID)
-			if not prefs[instanceID].albums[id].missing then
-			log:info('create "missing" table')
-			prefs[instanceID].albums[id].missing = {}
-			end
+			log:debug("add to missing table",id,instanceID)
+			
+			if not prefs[instanceID].albums[id] then
+			--add missing albums table
+			prefs[instanceID].albums[id] = {}
+			log:info('created "album" table from syncphoto',prefs[instanceID].albums[id])
+		end
+		if not prefs[instanceID].albums[id].missing then
 			--add missing image to table
-			table.insert(missing, imagename)
-				prefs[instanceID].albums[id].missing = prefs[instanceID].albums[id].missing
+			prefs[instanceID].albums[id].missing = {}
+			log:info('created "missing" table from syncphoto',prefs[instanceID].albums[id].missing)
+		end
+			--table.insert(missing, imagename)
+			table.insert (prefs[instanceID].albums[id].missing, imagename)
+				--log:debug("show missing table",table_show(prefs[instanceID].albums))
+				--force table save.
+				prefs[instanceID].albums = prefs[instanceID].albums
 		end
 	end
 	log:info('reading images from server...done')
 	LrTasks.yield()
 	progressScope:done()
-
-	return missing
+--log:debug("check table",table_show(prefs[instanceID].albums[id]))
+	--return prefs[instanceID].albums[id].missing
 end
 
 --

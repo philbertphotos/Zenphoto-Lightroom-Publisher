@@ -13,7 +13,6 @@ local LrHttp            = import 'LrHttp'
 local LrColor           = import 'LrColor'
 local LrDate           	= import 'LrDate'
 local LrLogger          = import 'LrLogger'
-local LrXml             = import 'LrXml'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local LrPathUtils		= import 'LrPathUtils'
 local LrStringUtils		= import 'LrStringUtils'
@@ -140,18 +139,12 @@ log:info("prefs.serviceIsRunning ".. table_show(publishService))
 		prefs[instanceID].uploadMethod = propertyTable.uploadMethod
 	end)	
 	
-	propertyTable.webpath = '/plugins/zp-lightroom/' --prefs.webpath or '/plugins/zp-lightroom/'
-	prefs.webpath = '/plugins/zp-lightroom/' --propertyTable.webpath
---[[	propertyTable:addObserver( 'webpath', function() 
-		prefs.webpath = propertyTable.webpath
-		ZenphotoUser.resetLogin( propertyTable )
-	end)--]]
 log:debug(table_show(prefs))
 end
 
 --------------------------------------------------------------------------------
 function exportServiceProvider.sectionsForTopOfDialog( f, propertyTable )
-log:info('--START LOG--')
+log:info('exportServiceProvider.sectionsForTopOfDialog')
 
 --cleaning up old data
 if instanceID then
@@ -220,24 +213,7 @@ f:row {
 					end,
 				},
 			},
-			f:row {
-				f:static_text {
-					fill_horizontal = 1,
-					title = 'Upload photos via ',
-					alignment = 'right',
-				},
-
-				f:popup_menu {
-					width = share 'button_width',
-					alignment = 'center',
-					items = { 
-						{ title = "HTTP Multi-Post",	value = 'POST' },
-						{ title = "XML data", 			value = 'XML'  },
-					},
-					value = bind 'uploadMethod',
-					size = 'small'
-				},
-			},
+----------------------------
 	f:checkbox {
 		title = "Detailed scan",
 		checked_value = 'true',
@@ -246,46 +222,6 @@ f:row {
 		value = bind 'deepscan',
 	},
 },
-		
---[[			f:row {
-				margin_top = 20,
-				f:static_text {
-					fill_horizontal = 1,
-					title = 'Sync albums from server',
-				},
-
-				f:push_button {
-					title = 'Sync albums',
-					width = share 'button_width',
-												action = function()
-									LrTasks.startAsyncTask( function()
-											exportServiceProvider.sync(false, context)
-									end)
-							end,
-				},
-			},
-
-			f:row {
-				f:static_text {
-					fill_horizontal = 1,
-					title = 'Full sync of albums and images from server',
-				},
-
-				f:push_button {
-					title = 'Full sync',
-					width = share 'button_width',
-						action = function()
-									LrTasks.startAsyncTask( function()
-									log:trace("Sync all images dialog")
-										LrFunctionContext.callWithContext('function', function(context)
-
-											exportServiceProvider.sync(true, propertyTable, context, publishSettings)
-
-										end)
-									end)
-							end,
-				},
-			},--]]
 
 },
 },
@@ -297,58 +233,9 @@ f:row {
 					fill_horizontal = 1,
 					height_in_lines = 9,
 					width = 70,
-					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Sync Albums/Images". Right-click on it and select "Edit album..." from the menu. \n\nA dialog will be opened. \n\nFurther details and instructions can be found on http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher.',
+					title = 'Once you have logged-in, close the Publishing Manager and go to the "Publish Services" menu on the left side of the Lightroom window. There you will find the "Zenphoto Publisher" with a default node called "Sync Albums/Images". Right-click on it press the appropriate button.." from the menu. \n\nA dialog will be opened. \n\nFurther details and instructions can be found on http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher.',
 				},
 			},
-			
---[[			
-			f:row {
-				margin_top = 20,
-				f:static_text {
-					fill_horizontal = 1,
-					title = 'Read albumlist from server',
-				},
-
-				f:push_button {
-					title = 'Sync albums',
-					width = share 'button_width',
-					enabled = bind {
-						keys = { 'validAccount', 'serviceIsRunning' }, -- bind to both keys
-						operation = function( binder, values, fromTable ) 
-							return values.validAccount == values.serviceIsRunning and values.serviceIsRunning == true and values.validAccount == true -- check that values are ==
-						end,
-						},
-					action = function()
-									LrTasks.startAsyncTask( function()
-											exportServiceProvider.sync(false, context)
-									end)
-							end,
-				},
-			},
-
-			f:row {
-				f:static_text {
-					fill_horizontal = 1,
-					title = 'Read albums and images from server (EXPERIMENTAL)',
-				},
-
-				f:push_button {
-					title = 'Full sync',
-					width = share 'button_width',
-					enabled = bind {
-						keys = { 'validAccount', 'serviceIsRunning' }, 
-						operation = function( binder, values, fromTable ) 
-							return values.validAccount == values.serviceIsRunning and values.serviceIsRunning == true 
-						end,
-						},
-					action = function()
-									LrTasks.startAsyncTask( function()
-										exportServiceProvider.sync(true, context)
-									end)
-							end,
-				},
-			},
-]]--
 		},
 	}
 end
@@ -356,6 +243,9 @@ end
 --------------------------------------------------------------------------------
 function exportServiceProvider.sync( fullsync, publishService, context, publishSettings )
 log:trace('exportServiceProvider.sync')
+
+		--set instance ID
+	local instanceID = publishSettings.instance_ID
 	
 	local catalog = import 'LrApplication'.activeCatalog()
 	local albums = ZenphotoAPI.getAlbums()
@@ -386,7 +276,7 @@ log:trace('exportServiceProvider.sync')
 			progressScope:setCaption('reading album: ' .. tostring(album.name) .. ' (' .. i .. ' of ' .. #albums .. ')' )
 			progressScope:setPortionComplete( i, #albums )
 			if progressScope:isCanceled() then break end
-
+		
 			if not publishServiceExtention.collectionNameExists(publishService, album.name) then
 				catalog:withWriteAccessDo( "create album", function()
 					pubCollection = publishService:createPublishedCollection( album.name, nil, true )
@@ -408,7 +298,7 @@ log:trace('exportServiceProvider.sync')
 	--	sync images for all collections
 	--
 	if fullsync then
-		local missing = {}
+		local syncmissing = {}
 		
 		log:info('start syncing album and images')
 		for i, pubCollection in pairs (publishService:getChildCollections()) do
@@ -418,15 +308,16 @@ log:trace('exportServiceProvider.sync')
 			remoteId = pubCollection:getRemoteId()
 			if remoteId and pubCollection:getName() ~= 'Sync Albums/Images' then
 				LrFunctionContext.callWithContext('sync Images', function(context)
-					result = publishServiceExtention.getImages( pubCollection, remoteId, publishService, context)
-					prefs[instanceID].missing[remoteId] = result
-					missing = Utils.joinTables(missing, result)
+					result = publishServiceExtention.getImages( pubCollection, remoteId, publishSettings, context)
+					syncmissing = result
+					log:info("exportServiceProvider.missing table result ", table_show(result))
+					--syncmissing = Utils.joinTables(syncmissing, result)
 				end)
 			end
 		end
 		log:info('finish syncing album and images')
 		
-		if #missing > 0 then Utils.showMissingFilesDialog(missing) end
+--		if #syncmissing > 0 then Utils.showMissingFilesDialog(syncmissing) end
 		log:trace('missing greater than 0')
 	end
 end
@@ -513,7 +404,6 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 		local photodate = photo:getFormattedMetadata('dateTimeOriginal')
 		
 		log:info('Getting next photo...' .. photoname)
-		log:info('Getting next photo...' .. photodate)
 		
 		if not rendition.wasSkipped then
 			
@@ -527,9 +417,9 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 			--
 			if success then
 
-				if prefs.uploadMethod == 'POST' then
-					result, errors = ZenphotoAPI.uploadPhoto (pathOrMessage, params)
-				else
+				--if prefs.uploadMethod == 'POST' then
+				--	result, errors = ZenphotoAPI.uploadPhoto (pathOrMessage, params)
+				--else
 					-- read file
 					local filename  = LrPathUtils.leafName( pathOrMessage )
 					local file = assert(io.open(pathOrMessage, "rb"))
@@ -537,8 +427,8 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 					file:close()
 					-- convert to base64
 					local base64Data = LrStringUtils.encodeBase64(photoBinaryData)
-					result, errors = ZenphotoAPI.uploadXMLPhoto ( filename, params, base64Data )
-				end
+					result, errors = ZenphotoAPI.uploadImage ( filename, params, base64Data )
+				--end
 					
 				-- delete tmp-image file
 				LrFileUtils.delete( pathOrMessage )

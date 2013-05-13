@@ -12,9 +12,9 @@ Developer URI: http://philbertphotos.github.com/Zenphoto-Lightroom-Publisher
 ------------------------------------------------------------------------------]]
 
 local majorVersion = 4
-local minorVersion = 0
-local revisionVersion = 1
-local dateVersion = 20130507
+local minorVersion = 5
+local revisionVersion = 0
+local dateVersion = 20130513
 ZenphotoInfo = {}
 local displayVersion = ZenphotoInfo.version
 ZenphotoInfo.version = majorVersion .. minorVersion .. revisionVersion .. dateVersion
@@ -37,5 +37,5 @@ return
 		title = LOC "$$$/zenphoto/zenphoto=ZenPhoto Publisher",
 		file = 'ZenphotoExportServiceProvider.lua',
 	},
-	VERSION = { major=4, minor=0, revision=1, build=20130507, nil, },
+	VERSION = { major=4, minor=5, revision=0, build=20130513, nil, },
 }

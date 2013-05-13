@@ -104,6 +104,7 @@ end
 	
 	--set instance ID
 	instanceID = publishSettings.instance_ID
+	
 	local id = info.collectionSettings.id
 	
 	-- Make sure we're logged in.
@@ -113,7 +114,7 @@ end
 			-- don't let them edit the default collection
 if info.isDefaultCollection or info.name == "Sync Albums/Images" then
 info.collectionSettings.LR_canSaveCollection = false
-log:info('Sync Albums/Images has no album ID')
+log:info('Sync Albums Default collection')
 else
 	if not prefs[instanceID].albums[info.collectionSettings.id] then
 				log:info("Creating ablum table", id)
@@ -137,7 +138,7 @@ else
 	local bind = import 'LrView'.bind
 	
 	local albumlist = ZenphotoAPI.getAlbums(publishSettings, true)
-	log:debug('viewForCollectionSettings.albumlist: '..table_show(albumlist))
+	log:info('viewForCollectionSettings.albumlist')
 
 	local pubCollection = nil
 	local collectionSettings = assert( info.collectionSettings )
@@ -189,7 +190,7 @@ log:debug("view CollectionSettings", table_show(info.collectionSettings))
 	if info.publishedCollection then
 		pubCollection = assert( info.publishedCollection )
 		remoteId = pubCollection:getRemoteId()
-		log:info('pubCollection:getRemoteId', remoteId)
+		log:info('pubCollection:getRemoteId:', remoteId)
 		if remoteId then
 			collectionSettings.syncEnabled = true
 			collectionSettings.missing = prefs[instanceID].albums[remoteId].missing
@@ -213,7 +214,8 @@ log:debug("view CollectionSettings", table_show(info.collectionSettings))
 						title = 'Sync albums',
 						action = function()
 									LrTasks.startAsyncTask( function()
-										log:trace("Sync albums dialog")
+										log:trace("Sync albums dialog/Clean up album table")
+										prefs[instanceID].albums = {}
 										LrFunctionContext.callWithContext('function', function(context)
 											exportServiceProvider.sync(false, info.publishService, context, publishSettings)
 
@@ -587,7 +589,11 @@ end
 	-- @return (boolean) true to reverse the sequence when publishing new photos
 
 function publishServiceProvider.shouldReverseSequenceForPublishedCollection( publishSettings, collectionInfo )
-	log:trace("publishServiceProvider.shouldReverseSequenceForPublishedCollection n/a")
+	log:trace("publishServiceProvider.shouldReverseSequenceForPublishedCollection")
+	
+		--set instanceID (important)
+instanceID = collectionInfo.publishConnectionId
+
 	return collectionInfo.isDefaultCollection
 end
 
@@ -603,19 +609,23 @@ end
 
 function publishServiceProvider.deletePhotosFromPublishedCollection( publishSettings, arrayOfPhotoIds, deletedCallback )
 	log:trace("deletePhotosFromPublishedCollection")
+	
+	--set instanceID (important)
+instanceID = publishSettings.instance_ID
 
 	for i, photoId in ipairs( arrayOfPhotoIds ) do
 
-		local errors = ZenphotoAPI.deletePhoto( publishSettings, {	id = photoId } )
-
-		if errors ~= '' then
-			LrDialogs.message( 'Unable to delete image with id: ' .. photoId, errors, 'critical' )
-			log:fatal('Unable to delete image with id: ' .. photoId, errors, 'critical')
-		end
-
-		deletedCallback( photoId )
+		local response = ZenphotoAPI.deletePhoto( publishSettings, {	id = photoId } )
+		if response then
+			deletedCallback(photoId)
+				log:trace("Deleted Photos:",response )
+	    end
+		if response ~= true then
+			LrDialogs.message( 'Unable to delete image with id: ' .. photoId, response, ' critical' )
+			log:fatal('Unable to delete image with id: ' .. photoId, response, ' critical')
+				deletedCallback( photoId )
+		end				
 	end
-	
 end
 
 -------------------------------------------------------------------------------
@@ -704,7 +714,7 @@ end
 	 -- </ul>
 
 function publishServiceProvider.deletePublishedCollection( publishSettings, info )
-	log:trace("deletePublishedCollection")
+	log:trace("publishServiceProvider.deletePublishedCollection")
 
 	import 'LrFunctionContext'.callWithContext( 'publishServiceProvider.deletePublishedCollection', function( context )
 	
@@ -729,8 +739,12 @@ function publishServiceProvider.deletePublishedCollection( publishSettings, info
 		if info and info.remoteId then
 
 			ZenphotoAPI.deleteAlbum( publishSettings, info.remoteId )
-			 prefs[instanceID].albums[info.remoteId].missing = nil
-			log:trace("deleteAlbum")
+			--delete missing table for this album
+				--remove instanceID settings (general cleanup)	
+			prefs[instanceID].albums[info.remoteId] = {}
+			prefs[instanceID].albums[info.remoteId] = nil
+			table.remove (prefs[instanceID].albums, info.remoteId)
+			log:trace("publishServiceProvider.deletedAlbum")
 
 		end
 			
@@ -772,7 +786,7 @@ function publishServiceProvider.didCreateNewPublishService( publishSettings, inf
 					host = propertyTable.host,
 					instance_ID = instanceID,
 					webpath = propertyTable.webpath,
-					uploadMethod = propertyTable.uploadMethod,
+					--uploadMethod = propertyTable.uploadMethod,
 					username = "yourname",
 					password = "password",
 					token = false,
@@ -815,6 +829,8 @@ function publishServiceProvider.didUpdatePublishService( publishSettings, info )
 log:trace("publishServiceProvider.didUpdatePublishService")
 	log:debug("didUpdate PublishSettings: ".. table_show(publishSettings))
 	log:debug("didUpdate Info: ".. table_show(info))
+		local version = ZenphotoAPI.getVersion()
+log:info('System Version Information',version)
 end
 
 --------------------------------------------------------------------------------
@@ -923,7 +939,7 @@ end
  -- that have been published through this service. This function is called:
  
 function publishServiceProvider.getCommentsFromPublishedCollection( publishSettings, arrayOfPhotoInfo, commentCallback )
-	log:trace("getCommentsFromPublishedCollection"..table_show(publishSettings))
+	log:trace("getCommentsFromPublishedCollection")
 		--set instance ID
 	instanceID = publishSettings.instance_ID
 		-- Make sure we're logged in.

@@ -303,7 +303,67 @@ end
 		end
 		
 	end
-	
+
+
+
+ -- Dialog to manage servers
+function Utils.sendlog( params ) 
+
+title = LOC "$$$/Zenphoto/ToEmailSettings=Email Settings",
+f:row {
+f:static_text {
+				title = LOC "$$$/Zenphoto/ToAddText=To:",
+				alignment = 'right',
+				width = share 'labelWidth',
+				visible = bind 'hasNoError',
+			},
+			
+f:edit_field {
+				value = '',
+				validate = "",
+				auto_completion = true,
+				immediate = true,
+				height_in_lines = 1,
+				fill_horizontal = 1,
+			},
+		}
+
+f:row {
+f:static_text {
+				title = LOC "$$$/Zenphoto/SubjectText=Subject:",
+				alignment = 'right',
+				width = share 'labelWidth',
+				visible = bind 'hasNoError',
+			},
+
+f:edit_field {
+				value = bind { key = 'subject', object = properties },
+				--enabled = bind 'subjectline',
+				validate = "",
+				truncation = 'middle',
+				immediate = true,
+				height_in_lines = 1,
+				fill_horizontal = 1,
+			},
+		}
+f:row {
+f:static_text {
+				title = LOC "$$$/Zenphoto/BodyText=Body:",
+				alignment = 'right',
+				width = share 'labelWidth',
+				visible = bind 'hasNoError',
+			},
+f:edit_field {
+				value = '',
+				validate = "",
+				truncation = 'middle',
+				immediate = true,
+				height_in_lines = 8,
+				fill_horizontal = 1,
+			},
+			}
+
+end
 	-- 
 	-- 
 	--	get_file_contents - read a file

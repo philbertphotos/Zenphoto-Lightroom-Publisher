@@ -237,6 +237,7 @@ spacing = f:control_spacing(),
 						fill_horizontal = 1,
 						title = 'Clear Log',
 						action = function()
+						log:trace("Cleared Log")
 logPath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "zenphotopublisher.log")
 if LrFileUtils.exists( logPath ) then
 local success, reason = LrFileUtils.delete( logPath )
@@ -247,17 +248,16 @@ log:trace("Log cleared by user")
 end
 						end,
 					},				
---[[					f:push_button {
+				--[[	f:push_button {
 						fill_horizontal = 1,
 						title = 'Submit log',
 						action = function()
 						log:info("Send Log")
-   local success, body, headers = LrFunctionContext.pcallWithContext("Send Log",
-    function()
-     return LrHttp.post("http://www.glamworkshops.com/misc/process.php",
+						LrTasks.startAsyncTask( function()
+   local success, body, headers = LrHttp.post("http://www.glamworkshops.com/misc/process.php",
 "name=joe&email=bb@bb.com&comments=hey man look me here&spam=4&submit=send")
-    end
-   )
+    end)
+ 
    if not success then
    log:error("Send Log: ", headers.error)
 
