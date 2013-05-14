@@ -362,21 +362,23 @@ function ZenphotoAPI.sendJSONRequest( methodName, params, timeout)
 	params = methodName..'='..encode64(params)
 	
 local headers = {}
-	table.insert( headers, { field = 'User-Agent', value = 'Adobe Photoshop Lightroom Zenphoto Publish Plugin' } )
+	table.insert( headers, { field = 'User-Agent', value = 'Lightroom Zenphoto Publisher Plugin/('..getVersion()..')' } )
 	table.insert( headers, { field = 'Content-Type', value = 'application/x-www-form-urlencoded' } )
 	table.insert( headers, { field = 'Content-length', value = trim(tostring( #params) ) } )
-	table.insert( headers, { field = 'Host', value = prefs[instanceID].host} )
+	--table.insert( headers, { field = 'Host', value = prefs[instanceID].host} )
 
 	zenphotoURL = 'http://'..prefs[instanceID].host..'/plugins/ZenPublisher/ZenRPC.php'
 		log:debug('ZenphotoAPI.sendJSONRequest- url: '..zenphotoURL)
 	-- send request
 	local responseJSON, responseHeaders = LrHttp.post( zenphotoURL, params, headers, 'POST', timeout )	
-	if responseHeaders and (responseHeaders.status==500 or responseHeaders.status==401) then
-	LrDialogs.message( 'Server could not be reached!', 'Please make sure that an internet connection is established and that the web service is running.', 'error' )
+	if responseHeaders and (responseHeaders.status==500 or responseHeaders.status==401 or responseHeaders.status==400)then
+	LrDialogs.message( 'ERROR '..responseHeaders.status..' Server could not be reached!', 'Please make sure that an internet connection is established and that the web service is running.', 'error' )
+	log:debug('ZenphotoAPI.sendJSONRequest- Host Error: '..responseHeaders.status)
 	return ''
 	end
 	log:debug('headers:', table_show(responseHeaders))
 	log:debug('response:', table_show(responseJSON))
+	--log:debug('paramssent:', table_show(params))
 	
 	return trim(responseJSON)
 end
