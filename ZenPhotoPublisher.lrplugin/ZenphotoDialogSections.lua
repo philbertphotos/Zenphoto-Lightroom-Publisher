@@ -314,7 +314,7 @@ end
 local function download_file(context, PROP, url, leafName)
 log:info('download_file: ', leafName)
        
-   local fullpath = LrPathUtils.child(LrPathUtils.getStandardFilePath('zenphotopublisher-temp'), leafName)
+   local fullpath = LrPathUtils.child(LrPathUtils.getStandardFilePath('temp'), leafName)
         log:info("fullpath is [" .. fullpath .. "]\n")
    -- just in case it's already there, get rid of it
    LrFileUtils.delete(fullpath)
