@@ -49,7 +49,8 @@
 				<li><a href="#home" class="active">Home<br /><span>main page</span></a></li>
 				<li><a href="#features">Features<br /><span>list of features</span></a></li>
 				<li><a href="#download">Download Info<br /><span>get latest version</span></a></li>
-				<li><a href="#changelog">Change Log<br /><span>recent changes</span></a></li>
+				<li><a href="#changelog">Change Log<br /><span>recent changes</span></a></li>				
+				<li><a href="#FAQ">FAQ<br /><span>Frequenly asked questions</span></a></li>
 				<li><a href="#contact">Contact me<br /><span>you can email me here</span></a></li>
 
 			</ul>
@@ -177,30 +178,28 @@ Go to the Publish Service section of Lightroom and select the “Zenphoto Publis
 		
 		 <h1> Bugs & Limitations</h1>
    <span> Due to a bug in Lightroom, the Zenphoto sub-albums are not yet fully supported. ROADMAP
-   If you afraid problems then make use of the sync buttons from withing the “Sync Albums/Images collection. This works in any case!
+   If you afraid problems then make use of the sync buttons from withing the “Sync Albums/Images collection. This works in any case!</br>
+   <p></p>
    <h6> Virtual Copys </h6>
+   --------------------------</br>
    There is no easy way to say this but,..."VC are NOT SUPPORTED" after vetting the algorithm I used to accurately sync images on your Zenphoto and Light-room libary this is no way to determine if the image or the VC is the correct version to use during a sync.
    The workaround would be to give your VC a unique name or some identifier that way LR knows what image or VC to sync with.
-   
+ <p></p>
+ <strong><b>Know bugs after update.</b></strong></br>
+-----------------------------
+<p>No way around it but does not affect everyone.
+1. BUG: You need to add back your instances of Zenphoto (user-name password
+etc)</br>
+2. FIXED: Re-Syncing your albums and images is a must for most systems this way
+it purges lightrooms old data and creates new ones.</br>
+</p>
     <p><strong>ATTENTION: </strong> never make an album part of itself or of an containing sub-album. </p></span>
 	<div>
 			<h3>Report a bug/issue</h3>
           <a href="https://github.com/philbertphotos/Zenphoto-Lightroom-Publisher/issues" id="issues-on-github" class="button"><span>Report a bug/issue</span></a>
 		  </div>
 <div class="sixteen columns titleset">
-<h1>FAQ...</h1>
-
-<strong>“Server could not be connected”</strong> 
-<p>solution:</p>some users had problems with this error message. It appears due to incorrect server settings, especially when ZP is running in a sub-directory.
-
-ZenPhoto-URL – contains ONLY the the server name</br>
-webservice directory – contains the complete path from root</br>
-
-For example: when you have installed ZP on “www.testserver.com/zp” your “ZenPublisher” directory is copied under “www.testserver.com/zp/plgins/ZenPublisher”.
-
-ZenPhoto-URL – “www.testserver.com”</br>
-webservice directory – “/zp/plugins/ZenPublisher”
-        </section>
+</section>
 </div>
 </div>
 </article>
@@ -213,40 +212,30 @@ webservice directory – “/zp/plugins/ZenPublisher”
 		</div>
 		
 		<div class="two-thirds column">
-		 
+<h2> Date CODE 4.5.0.20130519 BETA</h2> 
+<p>I have been able to add more features eversince I CRUSHED some major bugs</p>
+1. UPDATE: Ablity to Clear,Open and Submit the Debug log (makes my life and your life easier)</br>
+2. ADDED: Self updating so you no longer have to keep checking github (AT LAST)</br>
+3. ADDED: supported for Virtual Images in Lightroom</br>
+4. FIXED: Syncing issue now supports all date formats.</br>
+<p></p>
+
 <h2> Date CODE 4.5.0.20130513 BETA</h2>
 <p>This is a massive rewrite of the Lightroom and Zenphoto API. It had to
 be done and have to say every major bug has been squashed. Even some of the issues I had vanished instantly.</p>
-1. Converted the API from XML to JSON</br>
-2. Removed all useless code and consolidated other functions</br>
-3. OSX/MAC users will be happy with this version</br>
-4. Redid the plugin side of the interface for easier updates and future
+1. ADDED: Converted the API from XML to JSON</br>
+2. FIXED: Removed all useless code and consolidated other functions</br>
+3. FIXED: OSX/MAC users will be happy with this version</br>
+4. ADDED: Redid the plugin side of the interface for easier updates and future
 changes.</br>
-5. Added clean up code to removed older entries from previous versions</br>
-6. Clean up login of data</br>
-7. 4.5.0 branch is a HUGE fork from the original.</br>
+5. ADDED: Clean up code to removed older entries from previous versions</br>
+6. FIXED: Clean up loggin of data</br>
+7. CHANGE: 4.5.0 branch is a HUGE fork from the original.</br>
 
 <p>After bug testing for over a week and doing multiple test of different
 versions I am confident the this will soon superseded the 3.0 and 4.0
 branches. I still have some work to do but as I can see is fit for
 release.</p>
-
-<h2>ROADMAP</h2>
-<p>-------------------</p>
-In the works auto update feature.</br>
-Sub-folder support in Lightroom</br>
-Better "missing images" support (not reliable again)</br>
-Album password coming in 4.5.1 soon</br>
-Lightroom 5 Support</br>
-
-<b>Know bugs after update.</b>
-<p>-----------------------------</p>
-<p>No way around it but does not affect everyone.
-1. You need to add back your instances of Zenphoto (user-name password
-etc)
-2. Re-Syncing your albums and images is a must for most systems this way
-it purges old data and creates new ones.
-</p>
 
 <h2> MAJOR UPDATE AND FIXES 4.0.1.20130423</h2>
 
@@ -319,6 +308,53 @@ to much to mention.. :)</span>
 			
 	</div><!-- container -->
 </article>
+<article id="FAQ">
+	<div class="container">
+	
+		<div class="sixteen columns titleset">
+		<section id="downloads" class="clearfix">
+<div class="sixteen columns titleset">
+<h1>FAQ...</h1>
+
+<strong>“Why did I fork this Project”</strong> 
+<p>Well I use both programs a lot and when I first started to use the plugin in Lightroom it was a BIG life savior and it speed up my workflow
+then I bumped in to the limitations, bugs and feature request.</p>
+Well the progress was VERY SLOW and answers was slower and I needed things like multiple instances, better image sync, self updates, tighter integration with Zenphoto.
+That how this fork was born.
+<p></p>
+<strong>“Was it hard to take over?”</strong>
+<p>At first yes took a bit to understand the code. There was not enough debug logging and something just did not make sense. So the first thing I did was a complete re-write of the debug logging code. This help greatly (actually copied from one of my other plugins)</p> After that I updated the authentication login (it supports Zenphoto natively) once I got things moved around it begin to make sense.
+
+<p></p>
+<strong>“Why did you move to JSON”</strong>
+<p>This was a BIG jump thanks to Jeffery for the JSON source code.</p>Ever since I took over the code it seems like it always had an issue with MAC computers and this carried over from the original source also. After a month of debugging I found it had to do with XML parsing and BOM code keep getting in the mix. I finally gave up trying to fix it and do workarounds. SO it took me 2 days solid to do a COMPLETE rewrite of the API on both LR and Zenphoto side. 
+After all that was said and done I came out with cleaner code... I can understand it, and runs a bit faster. OSX LOVES IT funny thing is a few bugs disappeared immediately after I got JSON API fully integrated yea so the XML interface had some issues.
+<p></p>
+<strong>“How is the response”</strong>
+<p>Well I never took this project over to help anyone per say ... I wanted it to work for me, but I sure others wanted some of the features and fixes. So the side effect was quite a few people who used both thanking me for taking it over. They even surprised that I answere questions so quickly and usually have a fix ready in a less than a hour longest was a few days.</p>
+<p></p>
+
+<strong>“How long will you support Zenphoto”</strong>
+I am not going anywhere and will be fully supporting this fork for quite sometime. You a feature request or found a bug just ask if its something I can do it will be done.
+<p></p>
+
+<strong>“Would you like to Thank anyone”</strong>
+SURE for one Lars for releasing the plugin source, Loki for taking over the project after the release. Big shout goes to sbillard and acrylian the Zenphoto develeopers.
+Oh and Jeffery for his help when I first started writing plugins for Lightroom so many months ago.
+<p></p>
+<h2>ROADMAP</h2>
+<p>-------------------</p>
+<S>In the works auto update feature.</S></br>
+Sub-folder support in Lightroom</br>
+Better "missing images" support (not reliable again)</br>
+Album password coming in 4.5.1 soon</br>
+Lightroom 5 Support</br>
+
+</section>
+</div>
+</div>
+</article>
+
 <article id="contact">
 	<div class="container">
 	
