@@ -24,10 +24,12 @@ function initRequestParams()
 	local username = prefs[instanceID].username
 	local password = prefs[instanceID].password
 	local loglevel = prefs.logLevel
-
+	
 	table.insert( paramMap, { loginUsername = username,
-							 loginPassword = password,
-							loglevel = loglevel } )
+							  loginPassword = password,
+							  loglevel = loglevel,
+                              checkver = getVersion()
+							} )
 	return paramMap
 end
 
@@ -36,8 +38,7 @@ end
 
 function ZenphotoAPI.authorize( login, password ) 
 	log:trace('ZenphotoAPI.authorize')
-	log:info('Authorizing with Zenphoto... Username:'..tostring(login), 'host:'.. prefs[instanceID].host)
-	log:debug('Authorizing with Zenphoto... Username:'..tostring(login), 'password:'..tostring(password), 'host:'.. prefs[instanceID].host)
+	log:info('Authorizing '..tostring(login).. ' on host:'.. prefs[instanceID].host)
 
 	local auth = false
 	local showMsg = true
@@ -63,6 +64,7 @@ if result == true then
 	log:info('Authorization successful')
 		auth = true
 		showMsg = false	
+		--ZenphotoAPI.getUpdate( getVersion() )  TODO
 	else
 
 	if result.code == '-2' then
@@ -210,8 +212,22 @@ log:trace('ZenphotoAPI.getVersion')
 	local paramMap = {}
 		local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.get.version', paramMap, 10 )
 		
-		log:debug('getRating paramMap : '..table_show(paramMap))
+		log:debug('getVersion paramMap : '..table_show(paramMap))
 		log:debug('getVersion:'..jsonResponse)	
+	return ZenphotoAPI.getSingleValueJSON(jsonResponse)
+end 
+
+---------------------------------------------------------------------------------
+function ZenphotoAPI.getUpdate( version ) 
+log:trace('ZenphotoAPI.getUpdate', version)
+
+	local paramMap = {}
+	table.insert( paramMap, { sysversion = version,
+							 didupdate = true } )
+		local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.get.update', paramMap, 10 )
+		
+		log:debug('getUpdate paramMap : '..table_show(paramMap))
+		log:debug('getUpdate:'..jsonResponse)	
 	return ZenphotoAPI.getSingleValueJSON(jsonResponse)
 end 
 

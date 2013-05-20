@@ -103,6 +103,7 @@ log:trace("ZenphotoUser.initLogin")
 	if not propertyTable.LR_publishService then return end	
 	-- Observe changes to prefs and update status message accordingly.
 	local function updateStatus()
+	log:info("Updating Login Status")
 		if storedCredentialsAreValid( propertyTable ) then
 			local displayUserName = prefs[instanceID].username
 			

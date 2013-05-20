@@ -63,11 +63,11 @@ function publishServiceExtention.getImages( publishedCollection, id, publishSett
 		LrTasks.yield()
 		
 		imageid = trim(image.id)
-		imageid = trim(image.albumid)
+		imageaid = trim(image.albumid)
 		imagename = trim(Utils.getFilenameNoExt(image.name))
 		imagesdate = trim(image.shortdate)
 		imageldate = trim(image.longdate)
-	log:info('Searching for...:', imagename)
+
 photos = catalog:findPhotos {
 			searchDesc = {
 					criteria = 'filename',
@@ -78,21 +78,29 @@ photos = catalog:findPhotos {
 function syncimage()	
 
 log:info('--START--')
-
+	log:info('Searching for...:', imagename)
 --if prefs[instanceID].deepscan == true then
 	
-	for i, syncphoto in pairs ( photos ) do
-	log:debug("checking photo: ", syncphoto:getFormattedMetadata( 'fileName' ), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ), imageldate, tostring(syncphoto) )
-		
-	if trim(imageldate) == '12/31/1969 7:00:00 PM'	then
+for i, syncphoto in pairs ( photos ) do
+
+--Formats the RAW date to the correct EXIF format and syncs with Zenphoto
+log:info('test:'..table_show(syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' )))
+local rawdate = (syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' ))
+if rawdate ~= nil then --check if its an empty string.
+EXIFrawdate = string.sub(string.gsub( (string.gsub(rawdate,'-',':')),'T',' '),1,19)
+end
+	log:debug("checking photo: ", syncphoto:getFormattedMetadata( 'fileName' ), EXIFrawdate, imageldate, tostring(syncphoto) )
+	
+	if trim(imageldate) == trim(EXIFrawdate) then
+	if not (i == 1) then
+		log:debug("photo "..imagename.." found "..imageldate..' and '..EXIFrawdate..' dates match' )
+	end
+			return photos[i] 	
+	else		
+	if (trim(imageldate) == '12:31:1969 19:00:00') or (imageldate == '')	then
 	log:debug("photo has an invalid or null date ", imageldate, tostring(syncphoto) )
 	return photos[1]
 		end	
-		
-	if imageldate == syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) then
-		log:debug("photo "..imagename.." found ", i, imageldate..' and '..syncphoto:getFormattedMetadata( 'dateTimeOriginal' )..' match' )
-			return photos[i] 	
-	end
 	end
 	
 --log:debug(imagename, imageldate)
@@ -100,12 +108,13 @@ log:info('--START--')
 --return photos[1]
 --end --deepscan
 end
+end
 
 syncphoto = syncimage()
 	
 		if syncphoto then
 			catalog:withWriteAccessDo('add photo to collection', function()
-				log:info("+ photo: "..  syncphoto:getFormattedMetadata( 'fileName' ), tostring(syncphoto), syncphoto:getFormattedMetadata( 'dateTimeOriginal' ) )
+				log:info("+ photo: "..  syncphoto:getFormattedMetadata( 'fileName' ), tostring(syncphoto) )
 				log:info("publishedCollection:addPhotoByRemoteId: " .. tostring(syncphoto), image.id, image.url, prefs[instanceID].deepscan)
 				publishedCollection:addPhotoByRemoteId( syncphoto, image.id, image.url, true )
 				log:info('--END--\n\n')

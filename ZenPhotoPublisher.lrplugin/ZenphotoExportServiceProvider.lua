@@ -87,7 +87,7 @@ propertyTable.instance_ID = instanceID
 			log:trace("Inserting new instance")
 				table.insert(prefs[instanceID],
 					{
-					host = propertyTable.host,
+					host = propertyTable.host, 
 					instance_ID = propertyTable.instance_ID,
 					webpath = propertyTable.webpath,
 					uploadMethod = propertyTable.uploadMethod,

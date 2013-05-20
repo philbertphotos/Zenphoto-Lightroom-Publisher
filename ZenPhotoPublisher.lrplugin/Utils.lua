@@ -6,6 +6,9 @@ some utilities and helper functions
 ------------------------------------------------------------------------------]]
 
 local LrDialogs 		= import 'LrDialogs'
+local LrFunctionContext	= import 'LrFunctionContext'
+local LrBinding         = import 'LrBinding'
+local LrView 			= import "LrView"
 local LrStringUtils		= import 'LrStringUtils'
 local prefs 			= import 'LrPrefs'.prefsForPlugin()
 local Info = require 'Info'
@@ -306,38 +309,66 @@ end
 
 
 
- -- Dialog to manage servers
-function Utils.sendlog( params ) 
+ -- Send Log Dialog
+function Utils.sendlog() 
+LrFunctionContext.callWithContext ("sendprop", function (context)
+local prop = LrBinding.makePropertyTable (context) 
 
-title = LOC "$$$/Zenphoto/ToEmailSettings=Email Settings",
-f:row {
-f:static_text {
-				title = LOC "$$$/Zenphoto/ToAddText=To:",
+prop.from = 'your@email.com'
+prop.body = 'Explain your problem here.'
+prop.sub = 'Zenphoto problem [sendlog]'
+local v = LrView.osFactory()
+sendresult = LrDialogs.presentModalDialog {
+      title = LOC("$$$/xxx=Send LOG"),
+	  actionVerb = "Send",
+      contents = v:view {
+         bind_to_object = prop,
+         v:static_text {
+            title = LOC("$$$/xxx=Please be as detailed as possible so I can process the debug log")
+         },
+         v:view {
+            --margin_top    = 30,
+            --margin_bottom = 30,
+            --place_horizontal = 0.5,
+            --place = 'horizontal',
+			
+v:row {
+width = 550,
+v:static_text {
+				title = LOC "$$$/Zenphoto/ToAddText=From:			",
 				alignment = 'right',
-				width = share 'labelWidth',
-				visible = bind 'hasNoError',
+				--width = 'labelWidth',
+				--visible = bind 'hasNoError',
 			},
 			
-f:edit_field {
-				value = '',
-				validate = "",
+v:edit_field {
+				value = LrView.bind 'from',
 				auto_completion = true,
 				immediate = true,
 				height_in_lines = 1,
 				fill_horizontal = 1,
+				validate = function(view, value)
+                             -- strip all whitespace, just in case some came over with a cut-n-paste
+                             value = value:gsub('%s+', '')
+                             if value:match('^[%w+%.%-_]+@[%w+%.%-_]+%.%a%a+$') then
+                                return true, value
+                             else
+                                return false, value, LOC("$$$/xxx=Enter a valid email address")
+                             end
+                          end,
 			},
-		}
+		},
 
-f:row {
-f:static_text {
-				title = LOC "$$$/Zenphoto/SubjectText=Subject:",
+		v:row {
+v:static_text {
+				title = LOC "$$$/Zenphoto/SubjectText=Subject:	",
 				alignment = 'right',
-				width = share 'labelWidth',
-				visible = bind 'hasNoError',
+				--width = share 'labelWidth',
+				--visible = bind 'hasNoError',
 			},
 
-f:edit_field {
-				value = bind { key = 'subject', object = properties },
+v:edit_field {
+				value = LrView.bind 'sub',
 				--enabled = bind 'subjectline',
 				validate = "",
 				truncation = 'middle',
@@ -345,24 +376,49 @@ f:edit_field {
 				height_in_lines = 1,
 				fill_horizontal = 1,
 			},
-		}
-f:row {
-f:static_text {
-				title = LOC "$$$/Zenphoto/BodyText=Body:",
+		},
+		
+v:row {
+v:static_text {
+title = LOC "$$$/Zenphoto/BodyText=USE Ctrl-J to create a new-line",
+},
+},
+v:row {
+v:static_text {
+				title = LOC "$$$/Zenphoto/BodyText=Body:		",
 				alignment = 'right',
-				width = share 'labelWidth',
-				visible = bind 'hasNoError',
+				--width = share 'labelWidth',
+				--visible = bind 'hasNoError',
 			},
-f:edit_field {
-				value = '',
+v:edit_field {
+				value = LrView.bind 'body',
 				validate = "",
 				truncation = 'middle',
 				immediate = true,
 				height_in_lines = 8,
 				fill_horizontal = 1,
 			},
-			}
+			},
+			v:row {
+v:static_text {
+				title = LOC "$$$/Zenphoto/Striped=ALL PASSWORDS AND SENSITIVE INFORMATION WILL BE STRIPPED FROM THE LOGS\n(hostnames are keep for debugging purposes)",
+				alignment = 'right',
+				--width = share 'labelWidth',
+				--visible = bind 'hasNoError',
+			},
 
+			},
+		  }
+      }
+   }
+   str = prop.sub..':'..prop.from..':'..prop.body..':' 
+    end) 
+--log:info(table_show(str)) 
+	 if sendresult == "ok" then
+      return str
+   else
+      return false
+   end 
 end
 	-- 
 	-- 
@@ -373,7 +429,7 @@ end
 	--
 	function get_file_contents(filename)
 		local fh = assert(io.open(filename, "rb"))
-		content = fh:read("*a") 
+		content = fh:read("*all") 
 		fh:close() 
 		return content 
 	end
