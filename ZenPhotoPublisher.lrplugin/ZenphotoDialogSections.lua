@@ -211,7 +211,7 @@ log:info('LatestVersion: '..LatestVersion ,'PluginVersion: '..pluginVersion)
       ShowUpgradeDialog(PROP)
    else
       -- Ours is not old
-	  log:onfo('You have the latest version ')
+	  log:info('You have the latest version ')
       update('NEW_VERSION_NUMBER', nil)
 
       if force then
