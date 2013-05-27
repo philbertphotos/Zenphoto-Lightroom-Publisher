@@ -30,6 +30,7 @@ function initRequestParams()
 							  loglevel = loglevel,
                               checkver = getVersion()
 							} )
+ZenphotoAPI.getUpdate( getVersion() )
 	return paramMap
 end
 
@@ -64,7 +65,6 @@ if result == true then
 	log:info('Authorization successful')
 		auth = true
 		showMsg = false	
-		--ZenphotoAPI.getUpdate( getVersion() )  TODO
 	else
 
 	if result.code == '-2' then
@@ -73,10 +73,15 @@ if result == true then
 		fault = true
 		showMsg = false	
 	elseif result.code == '-1' then
-	--LrDialogs.message( 'Zenphoto version error!', result.message, 'error' )
 	log:info('Authorization failed!')
 		auth = false
-		showMsg = true		
+		showMsg = true
+    elseif jsonResponse == '' then
+	LrDialogs.message( 'Zenphoto plugin not installed!','error' )
+	log:info('Zenphoto plugin not installed!')
+		fault = true
+		auth = false
+		showMsg = true			
 	end	
 end
 	return auth, showMsg
@@ -91,12 +96,12 @@ function ZenphotoAPI.uploadImage( filename, params, file )
 	local paramMap = initRequestParams()
 		paramMap[1]['filename'] = filename
 		paramMap[1]['file'] = file
-		
+				
 	for key,value in pairs(params) do 
 		paramMap[1][key] = value		
 	end
 	local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.image.upload', paramMap, 0 )
-	log:debug('uploadPhoto.paramMap: '..table_show(paramMap))
+	log:debug('uploadPhoto.paramMap: '..table_show(paramMap):gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\""))
 	log:debug('uploadPhotoJSON:'..jsonResponse)
 	
 	return ZenphotoAPI.getTableFromJSON(jsonResponse)
@@ -215,6 +220,21 @@ log:trace('ZenphotoAPI.getVersion')
 		log:debug('getVersion paramMap : '..table_show(paramMap))
 		log:debug('getVersion:'..jsonResponse)	
 	return ZenphotoAPI.getSingleValueJSON(jsonResponse)
+end
+
+---------------------------------------------------------------------------------
+function ZenphotoAPI.chkFunction(param)
+log:trace('ZenphotoAPI.chkFunction')
+
+--local paramMap = initRequestParams()
+	local paramMap = {}
+		table.insert( paramMap, { getFunction = param } )
+		local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.chk.func', paramMap, 10 )
+		
+		log:debug('chkFunction paramMap : '..table_show(paramMap))
+		log:debug('chkFunction:'..jsonResponse)	
+		--log:debug('chkFunction:'..ZenphotoAPI.getSingleValueJSON(jsonResponse))	
+	return ZenphotoAPI.getSingleValueJSON(jsonResponse)
 end 
 
 ---------------------------------------------------------------------------------
@@ -222,13 +242,25 @@ function ZenphotoAPI.getUpdate( version )
 log:trace('ZenphotoAPI.getUpdate', version)
 
 	local paramMap = {}
-	table.insert( paramMap, { sysversion = version,
-							 didupdate = true } )
+	table.insert( paramMap, { sysversion = version } )
 		local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.get.update', paramMap, 10 )
 		
 		log:debug('getUpdate paramMap : '..table_show(paramMap))
-		log:debug('getUpdate:'..jsonResponse)	
-	return ZenphotoAPI.getSingleValueJSON(jsonResponse)
+		log:debug('getUpdate:'..jsonResponse)
+if (jsonResponse) then
+	local zenphotopluginURL = 'http://'..prefs[instanceID].host..'/plugins/ZenPublisher.php'
+	local responseRPC, responseHeaders = LrHttp.post( zenphotopluginURL, 'updateRPC='..prefs.getgitreply, nil, 'POST' )
+log:debug('responseHeaders',table_show(responseHeaders))
+	log:debug('responseRPC',responseRPC)
+	
+	if responseHeaders and (responseHeaders.status==500 or responseHeaders.status==401 or responseHeaders.status==400)then
+	LrDialogs.message( 'ERROR '..responseHeaders.status..' Server could not be reached!', 'Please make sure that an internet connection is established and that the web service is running.', 'error' )
+	log:debug('ZenphotoAPI.getUpdate - Host Error: '..responseHeaders.status)
+	return false;
+	end	
+end		
+	
+	return responseRPC
 end 
 
 --------------------------------------------------------------------------------
@@ -335,7 +367,7 @@ log:trace( 'ZenphotoAPI.getTableFromJSON Main' )
 		end
 	end
 
-	log:debug(luaTableString)
+	log:debug('luaTableString',table_show(luaTableString))
 	resultTable = JSON:decode( luaTableString)
 		--[[
 	local luaTableFunction = luaTableString and loadstring( luaTableString )
@@ -352,10 +384,6 @@ end
 
 function ZenphotoAPI.getSingleValueJSON(jsonResponse)
 log:trace("ZenphotoAPI.getSingleValueJSON")
-	-- show when image was not found
-	--if responseDocument:name() == "fault" then
-		--log:debug('image was not found err'..ZenphotoAPI.getJSONError(jsonResponse))
-	--end
 	return JSON:decode( jsonResponse )
 end
 
@@ -373,7 +401,7 @@ end
 function ZenphotoAPI.sendJSONRequest( methodName, params, timeout)
 	log:trace('ZenphotoAPI.sendJSONRequest')
     
-	log:debug('ZenphotoAPI.sendJSONRequest-json: '..table_show(params))
+	log:debug('ZenphotoAPI.sendJSONRequest-json: '..table_show(params):gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\""))
 	local params = JSON:encode(params)
 	params = methodName..'='..encode64(params)
 	
@@ -392,9 +420,9 @@ local headers = {}
 	log:debug('ZenphotoAPI.sendJSONRequest- Host Error: '..responseHeaders.status)
 	return ''
 	end
-	log:debug('headers:', table_show(responseHeaders))
-	log:debug('response:', table_show(responseJSON))
-	--log:debug('paramssent:', table_show(params))
+	log:debug('sendJSONRequest.headers:', table_show(responseHeaders))
+	log:debug('sendJSONRequest.response:', table_show(responseJSON))
+	log:debug('paramssent:', table_show(params))
 	
 	return trim(responseJSON)
 end

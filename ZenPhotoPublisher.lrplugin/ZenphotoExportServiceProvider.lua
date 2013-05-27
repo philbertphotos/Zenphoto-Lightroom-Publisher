@@ -148,7 +148,9 @@ log:info('exportServiceProvider.sectionsForTopOfDialog')
 
 --cleaning up old data
 if instanceID then
+if prefs[instanceID].missing then
 prefs[instanceID].missing = nil
+end
 table.remove (prefs[instanceID], missing)
 table.remove (prefs,instanceTable)
 prefs.instanceTable = nil
@@ -269,27 +271,43 @@ log:trace('exportServiceProvider.sync')
 		end
 
 
-			
+		local albumtable = {}	
 		for i, album in pairs ( albums ) do
 			log:info("add album: -" .. tostring(album.name) .. "-")
 
 			progressScope:setCaption('reading album: ' .. tostring(album.name) .. ' (' .. i .. ' of ' .. #albums .. ')' )
 			progressScope:setPortionComplete( i, #albums )
 			if progressScope:isCanceled() then break end
-		
+		--TODO Parent and Sub Albums
+		--[[if not publishServiceExtention.collectionNameExists(publishService,'+'..album.name) then
+				catalog:withWriteAccessDo( "create collection set", function()
+					if album.hasSubalbum == '1' then
+					pubCollectionSet = publishService:createPublishedCollectionSet( '+'..album.name, nil, true )
+					pubCollectionSet:setRemoteId( album.id )
+					pubCollectionSet:setRemoteUrl( album.url )
+					end
+				end)
+			else
+				LrDialogs.message('Album '..album.name..' already exists', 'This album is not created in Lightroom. Albumnames must be unique.','info')
+			end--]]
+			
 			if not publishServiceExtention.collectionNameExists(publishService, album.name) then
 				catalog:withWriteAccessDo( "create album", function()
-					pubCollection = publishService:createPublishedCollection( album.name, nil, true )
+					--pubCollection = publishService:createPublishedCollection( album.name, pubCollectionSet, true )					
+					pubCollection = publishService:createPublishedCollection( album.name, nil, true )					
 					pubCollection:setCollectionSettings(album)
 					pubCollection:setRemoteId( album.id )
-					pubCollection:setRemoteUrl( album.url )
+					pubCollection:setRemoteUrl( album.url )				
 				end)
 			else
 				LrDialogs.message('Album '..album.name..' already exists', 'This album is not created in Lightroom. Albumnames must be unique.','info')
 			end
+					--table.insert( albumtable, { album = album.name,parent = album.parentFolder,subalbum = album.hasSubalbum} )
+			
+				
 		end
 		progressScope:done()
-		
+		--log:info('AlbumTable', table_show(albumtable))
 	end)
 		
 	LrTasks.yield()
@@ -402,6 +420,8 @@ function exportServiceProvider.processRenderedPhotos( functionContext, exportCon
 		local photo = rendition.photo
 		local photoname = photo:getFormattedMetadata('fileName')
 		local photodate = photo:getFormattedMetadata('dateTimeOriginal')
+		
+		params[photoname] = string.gsub(tostring(photo), "[(%a%p%s)]", "")
 		
 		log:info('Getting next photo...' .. photoname)
 		

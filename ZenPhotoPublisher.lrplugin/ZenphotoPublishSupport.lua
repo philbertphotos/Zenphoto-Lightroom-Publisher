@@ -22,14 +22,14 @@ local publishServiceProvider = {}
 
 publishServiceProvider.small_icon = 'zenphoto_small.png'
 publishServiceProvider.titleForPublishedCollection = 'Album'
-publishServiceProvider.titleForPublishedCollectionSet = LOC "$$$/Zenphoto/titleForPublishedCollectionSet=Parent Folder"
 publishServiceProvider.titleForPublishedCollection_standalone = LOC "$$$/Zenphoto/titleForPublishedCollection/Standalone=Album"
+publishServiceProvider.titleForPublishedCollectionSet = LOC "$$$/Zenphoto/titleForPublishedCollectionSet=Parent Folder"
 publishServiceProvider.titleForPublishedCollectionSet_standalone = LOC "$$$/Zenphoto/titleForPublishedCollectionSet/Standalone=Parent Folder"
 publishServiceProvider.titleForPublishedSmartCollection = LOC "$$$/Zenphoto/TitleForPublishedSmartCollection=Dynamic Album"
 publishServiceProvider.titleForPublishedSmartCollection_standalone = LOC "$$$/Zenphoto/titleForPublishedSmartCollection/Standalone=Dynamic Album"
 publishServiceProvider.disableRenamePublishedCollection = false
 publishServiceProvider.disableRenamePublishedCollectionSet = true
-publishServiceProvider.supportsCustomSortOrder = true
+publishServiceProvider.supportsCustomSortOrder = false
 publishServiceProvider.titleForPhotoRating = LOC "$$$/Zenphoto/titleForPhotoRating=Image Rating"
 publishServiceProvider.titleForGoToPublishedCollection = LOC "$$$/Zenphoto/titleForGoToPublishedCollection=Show album on ZenPhoto"
 publishServiceProvider.titleForGoToPublishedPhoto = LOC "$$$/Zenphoto/titleForGoToPublishedPhoto=Show image on ZenPhoto"
@@ -41,7 +41,7 @@ function publishServiceProvider.getCollectionBehaviorInfo( publishSettings,info 
 		defaultCollectionName = "Sync Albums/Images",
 		defaultCollectionCanBeDeleted = false,
 		canAddCollection = true,
-		maxCollectionSetDepth = 0,
+		--maxCollectionSetDepth = 0,
 	}
 	
 end
@@ -71,11 +71,11 @@ end
  -- the "Go to Published Collection" context-menu item.
 
 function publishServiceProvider.goToPublishedCollection( publishSettings, info )
-	log:trace("publishServiceProvider.goToPublishedCollectionAlbum")
+	log:trace("publishServiceProvider.goToPublishedCollectionAlbum", table_show(publishSettings))
 if info.name == "Sync Albums/Images" then
 LrDialogs.message( "You can not delete this collection" )
 elseif info.remoteUrl then
-		LrHttp.openUrlInBrowser( 'http://' .. prefs[prefs.instance_ID].host .."/".. info.remoteUrl )
+		LrHttp.openUrlInBrowser( 'http://' .. prefs[publishSettings.instance_ID].host .."/".. info.remoteUrl )
 end
 end
 
@@ -84,7 +84,7 @@ end
  -- "Go to Published Photo" context-menu item.
 	 
 function publishServiceProvider.goToPublishedPhoto( publishSettings, info )
-	log:trace("publishServiceProvider.goToPublishedPhoto")
+	log:trace("publishServiceProvider.goToPublishedPhoto", table_show(publishSettings))
 	--log:trace("goToPublishedPhoto.info: "..table_show(info))
 	--log:trace("goToPublishedPhoto.info: "..table_show(publishSettings))
 	if info.remoteUrl then
@@ -120,10 +120,6 @@ else
 				log:info("Creating ablum table", id)
 		if id ~= nil then
 		prefs[instanceID].albums[id] = {}
-		--set default password value
-		if not prefs[instanceID].albums[id].albumpassword then
-	prefs[instanceID].albums[id].albumpassword = ''
-	end
 	end
 	end	
 end
@@ -153,17 +149,7 @@ log:debug("view CollectionSettings", table_show(info.collectionSettings))
 	end
 
 	if not collectionSettings.albumpassword then
-		--collectionSettings.albumpassword = prefs[instanceID].albums[albumId].albumpassword
-
-		--if not prefs[instanceID].albums[albumId].albumpassword then
-		-- prefs[instanceID].albums[albumId].albumpassword = ''
-		--end
-		-- prefs[instanceID].albums[albumId].albumpassword = collectionSettings.albumpassword
-		
 			collectionSettings.albumpassword = ''
-			else 
-			log:info ('albumpassword', collectionSettings.albumpassword)
-			--prefs[instanceID].albums[id].albumpassword = collectionSettings.albumpassword
 	end
 	
 	if not collectionSettings.location then
@@ -311,7 +297,7 @@ log:debug("view CollectionSettings", table_show(info.collectionSettings))
 								},
 						},
 												
-						--[[f:row {
+						f:row {
 							f:static_text {
 								title = "Album Password:",
 								alignment = "right",
@@ -324,7 +310,7 @@ log:debug("view CollectionSettings", table_show(info.collectionSettings))
 								tooltip = "creates a album passoword",
 								width_in_chars = 38,
 								},
-						},--]]
+						},
 
 						f:row {
 							f:static_text {
@@ -485,22 +471,11 @@ log:trace("create new collection")
 														 description = info.collectionSettings.description,
 															location = info.collectionSettings.location,
 													   albumpassword = info.collectionSettings.albumpassword,
-													   --albumpassword = prefs[instanceID].albums[info.collectionSettings.id].albumpassword,
 																show = info.collectionSettings.show,
 														  commentson = info.collectionSettings.commentson,													  
 													})
 				log:info('publishServiceProvider.editAlbum: '..table_show(status))
 				
-			--if status.albumpassword == not nil then
-		--if prefs[instanceID].remoteId == nil then
-					--log:info("Creating ablum table"..remoteId)
-		--table.insert (prefs,instanceID,remoteId)
-	--end	
-
-			--prefs[instanceID].remoteId.albumpassword = info.collectionSettings.albumpassword
-			--prefs[instanceID][remoteId] = albumpassword
-					--log:trace("album password:"..info.collectionSettings.albumpassword)
-			--end
 			--	update collection settings
 			--
 			catalog = info.publishService.catalog
@@ -547,6 +522,36 @@ end
 
 function publishServiceProvider.viewForCollectionSetSettings( f, publishSettings, info )
 	log:trace("publishServiceProvider.viewForCollectionSetSettings (n/a)")
+		local collectionSettings = assert( info.collectionSettings )
+
+if collectionSettings.enableRating == nil then
+collectionSettings.enableRating = false
+end
+
+if collectionSettings.enableComments == nil then
+collectionSettings.enableComments = false
+end
+
+return f:group_box {
+title = LOC "$$$/yag/CollectionDialog/Title=Album settings",
+size = 'small',
+fill_horizontal = 1,
+bind_to_object = assert( collectionSettings ),
+
+f:column {
+fill_horizontal = 1,
+spacing = f:label_spacing(),
+
+f:static_text {
+title = "Album name: "
+},
+
+f:static_text {
+title = "Album UID: "
+}
+}
+
+}
 end
 --------------------------------------------------------------------------------
 --- (optional) This plug-in defined callback function is called when the user
@@ -827,8 +832,8 @@ end
 	 
 function publishServiceProvider.didUpdatePublishService( publishSettings, info )
 log:trace("publishServiceProvider.didUpdatePublishService")
-	log:debug("didUpdate PublishSettings: ".. table_show(publishSettings))
-	log:debug("didUpdate Info: ".. table_show(info))
+	--log:debug("didUpdate PublishSettings: ".. table_show(publishSettings))
+	--log:debug("didUpdate Info: ".. table_show(info))
 		local version = ZenphotoAPI.getVersion()
 log:info('System Version Information',version)
 end
@@ -966,7 +971,6 @@ function publishServiceProvider.getCommentsFromPublishedCollection( publishSetti
 							} )
 			end			
 		end	
-		--log:info('commentliststart: ' ..table_show(commentList))
 		commentCallback{ publishedPhoto = photoInfo, comments = commentList }		
 	end	
 end
@@ -983,7 +987,9 @@ end
 
 function publishServiceProvider.canAddCommentsToService( publishSettings )
 	log:trace("canAddCommentsToService")
-	return false --publishSettings.commentson
+	--set instance ID
+	instanceID = publishSettings.instance_ID
+	return 	ZenphotoAPI.chkFunction('printCommentForm')
 end
 
 --------------------------------------------------------------------------------
@@ -1008,15 +1014,16 @@ end
 
 function publishServiceProvider.getRatingsFromPublishedCollection( publishSettings, arrayOfPhotoInfo, ratingCallback )
 	log:trace("getRatingsFromPublishedCollection "..table_show(arrayOfPhotoInfo))
+if ZenphotoAPI.chkFunction('printRating') then
 		for i, photoInfo in ipairs( arrayOfPhotoInfo ) do
 		local rating = ZenphotoAPI.getImageRating( arrayOfPhotoInfo, { photoId = photoInfo.remoteId } )
 			log:trace('getRatingsData: '..table_show(rating))
 		if type( rating ) == 'string' then rating = tonumber( rating ) end
 
 		ratingCallback{ publishedPhoto = photoInfo, rating = rating or 0 }
-
 	end
 	return true
+end
 end
 
 function publishServiceProvider.endDialog(propertyTable, why)

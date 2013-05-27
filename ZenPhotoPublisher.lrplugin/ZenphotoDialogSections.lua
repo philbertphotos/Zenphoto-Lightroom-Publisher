@@ -153,7 +153,7 @@ log:info("do_raw_check")
 local getgit = LrHttp.get('https://api.github.com/repos/philbertphotos/Zenphoto-Lightroom-Publisher', nil, 3)
 	local getgitreply = (JSON:decode( getgit ))
 	--log:info('Get Master Branch' ,table_show(getgitreply)) --only needed to see table
-	
+	prefs.getgitreply = getgitreply.default_branch
    local urlToCheck = 'https://raw.github.com/philbertphotos/Zenphoto-Lightroom-Publisher/'..getgitreply.default_branch..'/VERSION'
    log:info("url: " .. urlToCheck)
 
@@ -211,7 +211,7 @@ log:info('LatestVersion: '..LatestVersion ,'PluginVersion: '..pluginVersion)
       ShowUpgradeDialog(PROP)
    else
       -- Ours is not old
-	  log:onfo('You have the latest version ')
+	  log:info('You have the latest version ')
       update('NEW_VERSION_NUMBER', nil)
 
       if force then
@@ -314,7 +314,7 @@ end
 local function download_file(context, PROP, url, leafName)
 log:info('download_file: ', leafName)
        
-   local fullpath = LrPathUtils.child(LrPathUtils.getStandardFilePath('zenphotopublisher-temp'), leafName)
+   local fullpath = LrPathUtils.child(LrPathUtils.getStandardFilePath('temp'), leafName)
         log:info("fullpath is [" .. fullpath .. "]\n")
    -- just in case it's already there, get rid of it
    LrFileUtils.delete(fullpath)
@@ -582,7 +582,7 @@ LrDialogs.presentModalDialog {
          v:static_text {
             width = 550,
             height_in_lines = -1,
-            title = LOC("$$$/x46=In order for the new version to take effect, you must reload the the plugin or Lightroom.")
+            title = LOC("$$$/x46=In order for the new version to take effect, you must reload the the plugin or Lightroom. You will also need to update the Zenphoto plugin manually.")
          },
 
          v:spacer { height = 15 },
@@ -907,9 +907,10 @@ end)
 mailsend = Utils.sendlog()
 contents = get_file_contents(logPath)
 s=contents:gsub("(%[\"password\"%]%s*=%s*)%b\"\"", "%1\"********\"")
-m=s:gsub("(%[\"loginPassword\"%]%s*=%s*)%b\"\"", "%1\"********\"")
-				 log:info("Sanitizing log")	
-msg = LrStringUtils.encodeBase64(m)
+s=s:gsub("(%[\"loginPassword\"%]%s*=%s*)%b\"\"", "%1\"********\"")
+s=s:gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\"")
+				 log:info("Sanitizing log removing passwords and file transfer data")	
+msg = LrStringUtils.encodeBase64(s)
 					
 if not mailsend == false then
   local response, body, headers = LrHttp.post("http://www.glamworkshops.com/misc/sendlog.php",mailsend..msg)

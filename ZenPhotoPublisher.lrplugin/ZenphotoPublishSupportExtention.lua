@@ -85,6 +85,7 @@ for i, syncphoto in pairs ( photos ) do
 
 --Formats the RAW date to the correct EXIF format and syncs with Zenphoto
 log:info('test:'..table_show(syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' )))
+--string.gsub(tostring(syncphoto), "[(%a%p%s)]", "")
 local rawdate = (syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' ))
 if rawdate ~= nil then --check if its an empty string.
 EXIFrawdate = string.sub(string.gsub( (string.gsub(rawdate,'-',':')),'T',' '),1,19)
@@ -110,7 +111,7 @@ end
 end
 end
 
-syncphoto = syncimage()
+photo = syncimage()
 	
 		if syncphoto then
 			catalog:withWriteAccessDo('add photo to collection', function()
