@@ -1,6 +1,6 @@
 <?php
 //    make sure that the WEBPATH is set to parent directory for correct URL values
-define ('sysrpcversion', "4.5.0.20130511");
+define ('sysrpcversion', "4.5.0.20130526");
 $dir        = str_replace( '\\', '/', realpath( dirname( __FILE__ ) ) );
 define( 'SERVERPATH', str_replace( '/plugins/ZenPublisher', '', $dir ) );
 require_once( SERVERPATH . '/zp-core/functions.php' );
