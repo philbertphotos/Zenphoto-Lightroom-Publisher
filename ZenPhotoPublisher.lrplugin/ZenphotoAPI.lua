@@ -247,7 +247,7 @@ log:trace('ZenphotoAPI.getUpdate', version)
 		
 		log:debug('getUpdate paramMap : '..table_show(paramMap))
 		log:debug('getUpdate:'..jsonResponse)
-if (jsonResponse) then
+if (jsonResponse == true) then
 	local zenphotopluginURL = 'http://'..prefs[instanceID].host..'/plugins/ZenPublisher.php'
 	local responseRPC, responseHeaders = LrHttp.post( zenphotopluginURL, 'updateRPC='..prefs.getgitreply, nil, 'POST' )
 log:debug('responseHeaders',table_show(responseHeaders))
