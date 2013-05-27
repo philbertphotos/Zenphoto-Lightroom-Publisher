@@ -771,7 +771,7 @@ function updateCheck($args)
 $args = decode64( $args );
 	//logger( 'updateCheck', ( $args[ 'loglevel' ] ) );
 	debugLog( 'updateCheck '.sysrpcversion);
-	if (getOption('zenpublisher_update') == 1) && ($args['sysversion']  > sysrpcversion)
+	if (getOption('zenpublisher_update') == 1 && $args['sysversion']  > sysrpcversion)
 	return true;
 return false;
 }
