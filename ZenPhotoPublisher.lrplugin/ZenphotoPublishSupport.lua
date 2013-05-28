@@ -71,7 +71,7 @@ end
  -- the "Go to Published Collection" context-menu item.
 
 function publishServiceProvider.goToPublishedCollection( publishSettings, info )
-	log:trace("publishServiceProvider.goToPublishedCollectionAlbum", table_show(publishSettings))
+	log:trace("publishServiceProvider.goToPublishedCollectionAlbum")
 if info.name == "Sync Albums/Images" then
 LrDialogs.message( "You can not delete this collection" )
 elseif info.remoteUrl then
@@ -84,11 +84,9 @@ end
  -- "Go to Published Photo" context-menu item.
 	 
 function publishServiceProvider.goToPublishedPhoto( publishSettings, info )
-	log:trace("publishServiceProvider.goToPublishedPhoto", table_show(publishSettings))
-	--log:trace("goToPublishedPhoto.info: "..table_show(info))
-	--log:trace("goToPublishedPhoto.info: "..table_show(publishSettings))
+	log:trace("publishServiceProvider.goToPublishedPhoto")
 	if info.remoteUrl then
-		LrHttp.openUrlInBrowser( 'http://' .. prefs[prefs.instance_ID].host .."/"..info.remoteUrl )
+		LrHttp.openUrlInBrowser( 'http://' .. prefs[publishSettings.instance_ID].host .."/"..info.remoteUrl )
 	end
 end
 
