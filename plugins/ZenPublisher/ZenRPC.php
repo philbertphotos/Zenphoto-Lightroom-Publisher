@@ -1,6 +1,6 @@
 <?php
 //    make sure that the WEBPATH is set to parent directory for correct URL values
-define ('sysrpcversion', "4.5.0.20130526");
+define ('sysrpcversion', "4.5.0.20130529");
 $dir        = str_replace( '\\', '/', realpath( dirname( __FILE__ ) ) );
 define( 'SERVERPATH', str_replace( '/plugins/ZenPublisher', '', $dir ) );
 require_once( SERVERPATH . '/zp-core/functions.php' );
@@ -591,7 +591,7 @@ function imageUpload( $args )
 	fwrite( $fp, base64_decode( $args[ 'file' ] ) );
 	fclose( $fp );
 	$img = newImage( $album, $filename );
-	addZenPubData( $args[ 'id' ], $img->filename . '=' . $args[ $img->filename ] );
+	//addZenPubData( $args[ 'id' ], $img->filename . '=' . $args[ $img->filename ] );
 	return entitysave( array(
 		 'status' => 'success',
 		'id' => $img->getID(),
@@ -745,7 +745,7 @@ function changeAlbum( $args )
 function checkFunc( $args )
 {
 $args = decode64( $args );
-	debugLog( 'checkFunc' . var_export( $args, true ) );
+	debugLog( 'checkFunc' );
 return function_exists($args['getFunction']);
 }
 
@@ -770,9 +770,12 @@ function updateCheck($args)
 {
 $args = decode64( $args );
 	//logger( 'updateCheck', ( $args[ 'loglevel' ] ) );
-	debugLog( 'updateCheck '.sysrpcversion);
+	debugLog( 'updateCheck '.$args['sysversion'].sysrpcversion);
 	if (getOption('zenpublisher_update') == 1 && $args['sysversion']  > sysrpcversion)
+	{
 	return true;
+	}else{
 return false;
+}
 }
 ?>
