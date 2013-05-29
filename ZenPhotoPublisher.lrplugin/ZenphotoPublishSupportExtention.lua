@@ -84,7 +84,7 @@ log:info('--START--')
 for i, syncphoto in pairs ( photos ) do
 
 --Formats the RAW date to the correct EXIF format and syncs with Zenphoto
-log:info('test:'..table_show(syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' )))
+--log:info('test:'..table_show(syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' )))
 --string.gsub(tostring(syncphoto), "[(%a%p%s)]", "")
 local rawdate = (syncphoto:getRawMetadata( 'dateTimeOriginalISO8601' ))
 if rawdate ~= nil then --check if its an empty string.
@@ -96,7 +96,7 @@ end
 	if not (i == 1) then
 		log:debug("photo "..imagename.." found "..imageldate..' and '..EXIFrawdate..' dates match' )
 	end
-			return photos[i] 	
+		return photos[i] 	
 	else		
 	if (trim(imageldate) == '12:31:1969 19:00:00') or (imageldate == '')	then
 	log:debug("photo has an invalid or null date ", imageldate, tostring(syncphoto) )
@@ -111,7 +111,7 @@ end
 end
 end
 
-photo = syncimage()
+syncphoto = syncimage()
 	
 		if syncphoto then
 			catalog:withWriteAccessDo('add photo to collection', function()
@@ -122,7 +122,7 @@ photo = syncimage()
 			end)
 		else
 			log:info("- photo: " .. imagename.." - "..imageldate )
-			log:debug("add to missing table",id,instanceID)
+			log:debug("add to missing table",id, 'instanceID:'..instanceID)
 			
 			if not prefs[instanceID].albums[id] then
 			--add missing albums table
