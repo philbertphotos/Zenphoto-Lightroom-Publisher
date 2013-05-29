@@ -100,9 +100,10 @@ function ZenphotoAPI.uploadImage( filename, params, file )
 	for key,value in pairs(params) do 
 		paramMap[1][key] = value		
 	end
-	local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.image.upload', paramMap, 0 )
-	log:debug('uploadPhoto.paramMap: '..table_show(paramMap):gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\""))
-	log:debug('uploadPhotoJSON:'..jsonResponse)
+	local jsonResponse = ZenphotoAPI.sendJSONRequest( 'zenphoto.image.upload', paramMap, 360 )
+	local paramMapTable = table_show(paramMap)
+	log:debug('uploadPhoto.paramMap: ', paramMapTable:gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\""))
+	log:debug('uploadPhotoJSON:', jsonResponse)
 	
 	return ZenphotoAPI.getTableFromJSON(jsonResponse)
 end
@@ -128,8 +129,10 @@ function ZenphotoAPI.getAlbums( propertyTable, simple )
 		local result = ZenphotoAPI.getTableFromJSON(jsonResponse, true)
 		log:debug('getAlbums result: '..table_show(result))
 		local empty = { { title = '- no sub-album -', value = ''} }
+		prefs.getAlbums_simplelist = Utils.joinTables(empty, result)
 		return Utils.joinTables(empty, result)
 	else
+	prefs.getAlbums_fulllist = ZenphotoAPI.getTableFromJSON(jsonResponse, false, false)
 		return ZenphotoAPI.getTableFromJSON(jsonResponse, false, false)
 	end
 end
@@ -401,7 +404,7 @@ end
 function ZenphotoAPI.sendJSONRequest( methodName, params, timeout)
 	log:trace('ZenphotoAPI.sendJSONRequest')
     
-	log:debug('ZenphotoAPI.sendJSONRequest-json: '..table_show(params):gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\""))
+	--log:debug('ZenphotoAPI.sendJSONRequest-json: '..table_show(params):gsub("(%[\"file\"%]%s*=%s*)%b\"\"", "%1\"********truncated - file data********\""))
 	local params = JSON:encode(params)
 	params = methodName..'='..encode64(params)
 	
@@ -412,7 +415,7 @@ local headers = {}
 	--table.insert( headers, { field = 'Host', value = prefs[instanceID].host} )
 
 	zenphotoURL = 'http://'..prefs[instanceID].host..'/plugins/ZenPublisher/ZenRPC.php'
-		log:debug('ZenphotoAPI.sendJSONRequest- url: '..zenphotoURL)
+		--log:debug('ZenphotoAPI.sendJSONRequest- url: '..zenphotoURL)
 	-- send request
 	local responseJSON, responseHeaders = LrHttp.post( zenphotoURL, params, headers, 'POST', timeout )	
 	if responseHeaders and (responseHeaders.status==500 or responseHeaders.status==401 or responseHeaders.status==400)then
@@ -422,7 +425,7 @@ local headers = {}
 	end
 	log:debug('sendJSONRequest.headers:', table_show(responseHeaders))
 	log:debug('sendJSONRequest.response:', table_show(responseJSON))
-	log:debug('paramssent:', table_show(params))
+	--log:debug('paramssent:', table_show(params))
 	
 	return trim(responseJSON)
 end
