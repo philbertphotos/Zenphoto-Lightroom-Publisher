@@ -128,9 +128,17 @@ function ZenphotoAPI.getAlbums( propertyTable, simple )
 	if simple == true then
 		local result = ZenphotoAPI.getTableFromJSON(jsonResponse, true)
 		log:debug('getAlbums result:', table_show(result))
-		local empty = { { title = '- no sub-album -', value = ''} }
-		prefs.getAlbums_simplelist = Utils.joinTables(empty, result)
-		return Utils.joinTables(empty, result)
+		local noalbum = { { title = '- no sub-album -', value = ''} }
+		
+		if jsonResponse == 'null' then
+		prefs.getAlbums_simplelist = noalbum
+		LrDialogs.message("empty")
+		return noalbum
+		else 
+		prefs.getAlbums_simplelist = Utils.joinTables(noalbum, result)
+		return Utils.joinTables(noalbum, result)
+		end
+		
 	else
 	prefs.getAlbums_fulllist = ZenphotoAPI.getTableFromJSON(jsonResponse, false, false)
 		return ZenphotoAPI.getTableFromJSON(jsonResponse, false, false)
